@@ -1,12 +1,12 @@
 # Codex Harness
 
-A versioned, Codex-only harness project for maintaining Johnny Liu's local
-Codex work surface.
+A versioned, Codex-only harness architecture for maintaining a local Codex work
+surface.
 
 The installed runtime lives at:
 
 ```powershell
-C:\Users\Johnny Liu\.codex
+$env:USERPROFILE\.codex
 ```
 
 This repository is the maintainable source package. It keeps source files,
@@ -37,7 +37,7 @@ the package, and syncing source back to the runtime.
 ## Common Commands
 
 Default harness maintenance uses Runtime Hotfix: edit
-`C:\Users\Johnny Liu\.codex`, verify runtime, then import the safe payload back
+`$env:USERPROFILE\.codex`, verify runtime, then import the safe payload back
 into `src/`. Use Source Release only for explicit GitHub, release, publish,
 commit, or source-project work.
 
@@ -71,6 +71,10 @@ Verify the runtime after install:
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
+
+## License
+
+This project is released under the MIT License. See `LICENSE`.
 
 ## GitHub Naming
 

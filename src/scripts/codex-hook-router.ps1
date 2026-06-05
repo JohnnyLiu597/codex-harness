@@ -2,7 +2,7 @@ param(
     [ValidateSet("Stop", "SessionStart", "SessionEnd", "PreToolUse", "PostToolUse", "PreCompact", "ToolFailure")]
     [string]$Event = "Stop",
     [string]$Payload = "",
-    [string]$CodexHome = "C:\Users\Johnny Liu\.codex",
+    [string]$CodexHome = "$env:USERPROFILE\.codex",
     [string]$LogRoot = "",
     [switch]$Quiet
 )
@@ -109,19 +109,31 @@ function Get-CodexHarnessDriftFacts {
         [string]$CodexHomePath
     )
 
-    $sourceRoot = "C:\Users\Johnny Liu\Claudecowork\codex-harness"
+    $sourceRoot = $env:CODEX_HARNESS_SOURCE
     $isCodexHarness = $false
+    if (-not [string]::IsNullOrWhiteSpace($sourceRoot)) {
+        try {
+            $sourceRoot = (Resolve-Path -LiteralPath $sourceRoot).Path
+        } catch {
+            $sourceRoot = ""
+        }
+    }
     try {
         $resolvedRoot = (Resolve-Path -LiteralPath $Root).Path
-        $isCodexHarness = $resolvedRoot.StartsWith($sourceRoot, [System.StringComparison]::OrdinalIgnoreCase)
+        $isCodexHarness = (-not [string]::IsNullOrWhiteSpace($sourceRoot)) -and
+            $resolvedRoot.StartsWith($sourceRoot, [System.StringComparison]::OrdinalIgnoreCase)
     } catch {
         $isCodexHarness = $false
     }
 
     $runtimeSkill = Join-Path $CodexHomePath "skills\project-harness-optimizer\SKILL.md"
-    $sourceSkill = Join-Path $sourceRoot "src\skills\project-harness-optimizer\SKILL.md"
+    $sourceSkill = if ([string]::IsNullOrWhiteSpace($sourceRoot)) {
+        ""
+    } else {
+        Join-Path $sourceRoot "src\skills\project-harness-optimizer\SKILL.md"
+    }
     $skillDrift = $null
-    if ((Test-Path -LiteralPath $runtimeSkill) -and (Test-Path -LiteralPath $sourceSkill)) {
+    if ((Test-Path -LiteralPath $runtimeSkill) -and $sourceSkill -and (Test-Path -LiteralPath $sourceSkill)) {
         try {
             $skillDrift = (Get-FileHash -LiteralPath $runtimeSkill -Algorithm SHA256).Hash -ne
                 (Get-FileHash -LiteralPath $sourceSkill -Algorithm SHA256).Hash

@@ -121,7 +121,7 @@ to be committed unless the project wants trace artifacts in Git.
 Use:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\init-project-harness.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\init-project-harness.ps1"
 ```
 
 For major work, create or update this scaffold before implementation and include
@@ -131,7 +131,7 @@ the relevant docs/context changes in the Git commit when committing the work.
 commits against the code diff. Use:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\check-project-docs.ps1" -ProjectRoot "<repo>"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\check-project-docs.ps1" -ProjectRoot "<repo>"
 ```
 
 For long-running product work, `docs/features.json` is the machine-readable
@@ -210,31 +210,31 @@ than expanding `AGENTS.md` into a manual.
 Manual global health check:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\harness-health.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\harness-health.ps1"
 ```
 
 Deterministic harness regression checks:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\harness-evals\run-harness-evals.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
 
 Real-task trace eval plumbing:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\harness-evals\run-trace-evals.ps1" -DryRun
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-trace-evals.ps1" -DryRun
 ```
 
 Global verification only:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\verify-global-harness.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"
 ```
 
 Project harness onboarding audit:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\audit-project-harness.ps1" -ProjectRoot "<repo>"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\audit-project-harness.ps1" -ProjectRoot "<repo>"
 ```
 
 Results live under `~/.codex/harness-health/`,
@@ -262,7 +262,7 @@ Core files:
 Use the workflow entry point for command-style flows:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\scripts\invoke-codex-workflow.ps1" -Workflow verify -ProjectRoot "<repo>"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\invoke-codex-workflow.ps1" -Workflow verify -ProjectRoot "<repo>"
 ```
 
 Use agents as role-specific workers: planner, architect, tester, e2e runner,
@@ -336,7 +336,7 @@ provider tokens stored directly in `config.toml`.
 - For project scaffolding, create concise `AGENTS.md`, `mission.md`, and
   `CONTEXT.md` files instead of relying only on global instructions.
 - Use `rg` for search. If PATH lookup fails, use
-  `C:\Users\Johnny Liu\AppData\Local\OpenAI\Codex\bin\rg.exe` before falling
+  `$env:LOCALAPPDATA\OpenAI\Codex\bin\rg.exe` before falling
   back to slower search tools.
 - For feature fixes, reproduce the issue when feasible, fix it, and rerun the
   reproduction path.

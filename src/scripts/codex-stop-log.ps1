@@ -15,7 +15,7 @@ if (Test-Path -LiteralPath $router) {
     exit 0
 }
 
-$logRoot = "C:\Users\Johnny Liu\.codex\hook-logs"
+$logRoot = "$env:USERPROFILE\.codex\hook-logs"
 if (-not (Test-Path -LiteralPath $logRoot)) {
     New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
 }

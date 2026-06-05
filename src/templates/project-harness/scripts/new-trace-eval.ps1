@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$globalScript = "C:\Users\Johnny Liu\.codex\scripts\new-trace-eval.ps1"
+$globalScript = "$env:USERPROFILE\.codex\scripts\new-trace-eval.ps1"
 if (-not (Test-Path -LiteralPath $globalScript)) {
     throw "Global new-trace-eval.ps1 not found: $globalScript"
 }

@@ -12,7 +12,7 @@ gates.
 - Codex-only by default.
 - Windows-first and PowerShell-first.
 - No secrets or runtime databases in source.
-- Runtime install target: `C:\Users\Johnny Liu\.codex`.
+- Runtime install target: `$env:USERPROFILE\.codex`.
 - Source-of-truth project: this repository.
 - Verify before claiming harness changes are complete.
 

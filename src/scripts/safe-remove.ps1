@@ -46,7 +46,7 @@ function Get-DefaultTrashRoot {
     } catch {
     }
 
-    return (Join-Path "C:\Users\Johnny Liu\.codex" ".codex-trash")
+    return (Join-Path "$env:USERPROFILE\.codex" ".codex-trash")
 }
 
 function Get-UniqueDestination {

@@ -1,5 +1,5 @@
 param(
-    [string]$CodexHome = "C:\Users\Johnny Liu\.codex",
+    [string]$CodexHome = "$env:USERPROFILE\.codex",
     [string]$ProjectRoot = "",
     [int]$MaxActiveSkills = 50,
     [int]$LargeSkillBytes = 12000

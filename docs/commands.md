@@ -3,12 +3,12 @@
 Run commands from the repository root:
 
 ```powershell
-cd "C:\Users\Johnny Liu\Claudecowork\codex-harness"
+cd "<repo>"
 ```
 
 ## Import Current Runtime
 
-Use this after a Runtime Hotfix lane change in `C:\Users\Johnny Liu\.codex`.
+Use this after a Runtime Hotfix lane change in `$env:USERPROFILE\.codex`.
 
 ```powershell
 .\deploy\sync-from-runtime.ps1

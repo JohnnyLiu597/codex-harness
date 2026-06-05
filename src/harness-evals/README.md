@@ -7,7 +7,7 @@ safe removal, project docs sync, Stop hook privacy, and trace-eval plumbing.
 Run:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\harness-evals\run-harness-evals.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
 
 Results are written to `harness-evals/runs/`.
@@ -15,7 +15,7 @@ Results are written to `harness-evals/runs/`.
 For real-task regression prompts, use:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Johnny Liu\.codex\harness-evals\run-trace-evals.ps1" -DryRun
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-trace-evals.ps1" -DryRun
 ```
 
 Remove `-DryRun` only when intentionally spending model quota on trace evals.

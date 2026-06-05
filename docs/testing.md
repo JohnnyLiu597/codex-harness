@@ -21,7 +21,7 @@ The package check verifies:
 
 ## Runtime Verification
 
-Run this after syncing to `C:\Users\Johnny Liu\.codex`:
+Run this after syncing to `$env:USERPROFILE\.codex`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"

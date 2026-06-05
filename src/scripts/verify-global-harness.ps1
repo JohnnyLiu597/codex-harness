@@ -1,5 +1,5 @@
 param(
-    [string]$CodexHome = "C:\Users\Johnny Liu\.codex"
+    [string]$CodexHome = "$env:USERPROFILE\.codex"
 )
 
 $ErrorActionPreference = "Stop"
@@ -7,8 +7,7 @@ $ErrorActionPreference = "Stop"
 $codexHomePath = (Resolve-Path -LiteralPath $CodexHome).Path
 $python = Get-Command python -ErrorAction SilentlyContinue
 $rg = Get-Command rg -ErrorAction SilentlyContinue
-$bundledRg = Join-Path $codexHomePath "..\AppData\Local\OpenAI\Codex\bin\rg.exe"
-$bundledRg = "C:\Users\Johnny Liu\AppData\Local\OpenAI\Codex\bin\rg.exe"
+$bundledRg = "$env:LOCALAPPDATA\OpenAI\Codex\bin\rg.exe"
 
 function Get-McpServerNames {
     param([Parameter(Mandatory = $true)][string]$Config)

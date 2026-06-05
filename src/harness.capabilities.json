@@ -1,7 +1,7 @@
 {
   "schema": "codex-harness-capabilities-v1",
   "scope": "global",
-  "codex_home": "C:\\Users\\Johnny Liu\\.codex",
+  "codex_home": "$env:USERPROFILE\\.codex",
   "core": {
     "runtime": "Codex-only",
     "platform": "Windows-first",

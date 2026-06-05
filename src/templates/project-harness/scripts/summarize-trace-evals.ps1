@@ -1,6 +1,6 @@
 param(
     [string]$ProjectRoot = "",
-    [string]$CodexHome = "C:\Users\Johnny Liu\.codex",
+    [string]$CodexHome = "$env:USERPROFILE\.codex",
     [string]$RunsRoot = "",
     [int]$Last = 10
 )

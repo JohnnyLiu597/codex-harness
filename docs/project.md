@@ -3,7 +3,7 @@
 `codex-harness` is the maintainable source project for a local Codex-only
 harness.
 
-The active runtime lives in `C:\Users\Johnny Liu\.codex`. This repository
+The active runtime lives in `$env:USERPROFILE\.codex`. This repository
 exists so the runtime can be versioned, reviewed, synced, and eventually
 published without leaking local state.
 
@@ -30,7 +30,7 @@ published without leaking local state.
 ## Source And Install
 
 - Source package: `src/`
-- Local install target: `C:\Users\Johnny Liu\.codex`
+- Local install target: `$env:USERPROFILE\.codex`
 - Import script: `deploy/sync-from-runtime.ps1`
 - Install script: `deploy/sync-to-runtime.ps1`
 - Package check: `deploy/verify-package.ps1`

@@ -155,7 +155,7 @@ If these files are missing:
 - In Git repositories, include scaffold/context updates in the same commit as
   the major change when the user has asked to commit. Do not push unless asked.
 
-Use `C:\Users\Johnny Liu\.codex\scripts\init-project-harness.ps1` to create
+Use `$env:USERPROFILE\.codex\scripts\init-project-harness.ps1` to create
 the standard scaffold.
 
 ## Smoke And Major Work
@@ -306,7 +306,7 @@ the standard scaffold.
 - Prefer `rg` for file and text search.
 - Before claiming `rg` is unavailable, check `Get-Command rg`.
 - If `rg` is not on PATH, try the Codex-bundled binary at
-  `C:\Users\Johnny Liu\AppData\Local\OpenAI\Codex\bin\rg.exe`.
+  `$env:LOCALAPPDATA\OpenAI\Codex\bin\rg.exe`.
 - Fall back to PowerShell `Select-String` only after those checks fail.
 
 ## Verification

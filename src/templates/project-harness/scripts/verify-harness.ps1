@@ -1,4 +1,4 @@
-﻿param(
+param(
     [switch]$Fast
 )
 
@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $python = Get-Command python -ErrorAction SilentlyContinue
 $rg = Get-Command rg -ErrorAction SilentlyContinue
-$bundledRg = "C:\Users\Johnny Liu\AppData\Local\OpenAI\Codex\bin\rg.exe"
+$bundledRg = "$env:LOCALAPPDATA\OpenAI\Codex\bin\rg.exe"
 
 $required = @(
     "AGENTS.md", "mission.md", "CONTEXT.md", "MEMORY.md",

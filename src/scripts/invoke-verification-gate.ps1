@@ -50,7 +50,7 @@ function Resolve-ProjectScript {
     if (Test-Path -LiteralPath $projectScript) { return $projectScript }
 
     if ($GlobalFallback) {
-        $globalScript = Join-Path "C:\Users\Johnny Liu\.codex\scripts" $Name
+        $globalScript = Join-Path "$env:USERPROFILE\.codex\scripts" $Name
         if (Test-Path -LiteralPath $globalScript) { return $globalScript }
     }
 

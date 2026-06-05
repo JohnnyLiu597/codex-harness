@@ -484,7 +484,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$script = "C:\Users\Johnny Liu\.codex\scripts\safe-remove.ps1"
+$script = "$env:USERPROFILE\.codex\scripts\safe-remove.ps1"
 & $script @Args
 '@
 
@@ -496,7 +496,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
-& "C:\Users\Johnny Liu\.codex\scripts\check-project-docs.ps1" -ProjectRoot $root -BaseRef $BaseRef
+& "$env:USERPROFILE\.codex\scripts\check-project-docs.ps1" -ProjectRoot $root -BaseRef $BaseRef
 '@
 
 $rules = @"

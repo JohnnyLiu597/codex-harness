@@ -1,12 +1,12 @@
 # Codex Harness Project Rules
 
-This repository is the source-of-truth project for Johnny Liu's Codex-only
-harness. The installed runtime lives at `C:\Users\Johnny Liu\.codex`.
+This repository is the source-of-truth project for a user's Codex-only
+harness. The installed runtime lives at `$env:USERPROFILE\.codex`.
 
 ## Operating Model
 
 - Treat `src/` as the maintainable payload that can be synced into the runtime.
-- Treat `C:\Users\Johnny Liu\.codex` as the local install target, not the
+- Treat `$env:USERPROFILE\.codex` as the local install target, not the
   source of truth once this project is initialized.
 - Do not copy secrets, auth files, SQLite state, logs, sessions, caches,
   plugins, or generated runtime artifacts into source.
@@ -30,7 +30,7 @@ Read these files in order when present:
 
 Default harness maintenance uses the Runtime Hotfix lane:
 
-1. Edit the installed runtime under `C:\Users\Johnny Liu\.codex`.
+1. Edit the installed runtime under `$env:USERPROFILE\.codex`.
 2. Verify the runtime with:
    `powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"`.
 3. Sync safe maintainable payload back into this repository with

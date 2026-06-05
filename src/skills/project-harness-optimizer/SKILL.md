@@ -25,7 +25,7 @@ The harness has two layers.
 
 ### Global Layer
 
-Lives under `C:\Users\Johnny Liu\.codex` and defines personal defaults:
+Lives under `$env:USERPROFILE\.codex` and defines personal defaults:
 
 - `AGENTS.md`: global Codex behavior and safety rules.
 - `CODEX.md`: durable explanation of the local Codex setup.
@@ -225,13 +225,13 @@ run `deploy\verify-package.ps1`.
 The publishable source-of-truth project lives at:
 
 ```text
-C:\Users\Johnny Liu\Claudecowork\codex-harness
+<repo>
 ```
 
 The active runtime remains:
 
 ```text
-C:\Users\Johnny Liu\.codex
+$env:USERPROFILE\.codex
 ```
 
 Default rule: runtime first, source closes the loop.
@@ -240,26 +240,26 @@ Lane router:
 
 - Use `Runtime Hotfix` by default for harness maintenance, skill repairs,
   behavior/rule updates, runtime docs, scripts, templates, and verification
-  improvements. Patch `C:\Users\Johnny Liu\.codex` first so the current Codex
+  improvements. Patch `$env:USERPROFILE\.codex` first so the current Codex
   session benefits immediately.
 - Use `Source Release` when the user explicitly mentions GitHub, release,
   publish, commit, source project, `codex-harness\src`, or Chinese equivalents
-  such as `发版`, `发布`, `提交`, `源码项目`, or `源码`.
+  such as `鍙戠増`, `鍙戝竷`, `鎻愪氦`, `婧愮爜椤圭洰`, or `婧愮爜`.
 - Use `Audit Only` when the user explicitly says they only want assessment,
-  auditing, diagnosis, or no file changes, including `只评估`, `只审计`,
-  `不要改文件`, or `不改文件`.
+  auditing, diagnosis, or no file changes, including `鍙瘎浼癭, `鍙璁,
+  `涓嶈鏀规枃浠禶, or `涓嶆敼鏂囦欢`.
 - If the wording is ambiguous, choose `Runtime Hotfix` for Codex-harness
   improvements and report the selected lane in the final response.
 
 - For immediate harness fixes, behavior changes, skill edits, global rule
   updates, script fixes, and verification upgrades, patch the runtime under
-  `C:\Users\Johnny Liu\.codex` first so the current Codex session can benefit
+  `$env:USERPROFILE\.codex` first so the current Codex session can benefit
   immediately.
 - After any effective runtime change, sync it back into the source project with
-  `C:\Users\Johnny Liu\Claudecowork\codex-harness\deploy\sync-from-runtime.ps1
+  `<repo>\deploy\sync-from-runtime.ps1
   -Refresh`, then run the source package checks.
 - For explicit GitHub, release, publish, source-project, source-code, or commit
-  work, edit `C:\Users\Johnny Liu\Claudecowork\codex-harness\src` first,
+  work, edit `<repo>\src` first,
   verify the package, then sync to the runtime with
   `deploy\sync-to-runtime.ps1`.
 - Never copy runtime-only state into the source project: `config.toml`,
@@ -391,7 +391,7 @@ For real repos or long-running work, the standard scaffold is:
     safe-remove.ps1
 ```
 
-The user's AI Canvas repo under `C:\Users\Johnny Liu\Claudecowork` is the
+The user's AI Canvas repo under `<workspace>` is the
 current reference project harness. Treat its business-code worktree as dirty
 unless proven otherwise; never revert those changes.
 
@@ -465,13 +465,13 @@ Use when adding a new harness capability.
 First choose a maintenance lane:
 
 - If the user wants the current harness to get better now, use `Runtime
-  Hotfix`: edit `C:\Users\Johnny Liu\.codex`, verify, then sync back to
-  `C:\Users\Johnny Liu\Claudecowork\codex-harness`.
+  Hotfix`: edit `$env:USERPROFILE\.codex`, verify, then sync back to
+  `<repo>`.
 - If the user mentions GitHub, release, publish, source project, source-code,
-  commit, `发版`, `发布`, `提交`, `源码项目`, or `源码`, use `Source Release`:
+  commit, `鍙戠増`, `鍙戝竷`, `鎻愪氦`, `婧愮爜椤圭洰`, or `婧愮爜`, use `Source Release`:
   edit `codex-harness\src`, verify, then sync to runtime.
 - If the user asks only for assessment, auditing, diagnosis, or no file
-  changes, including `只评估`, `只审计`, `不要改文件`, or `不改文件`, use
+  changes, including `鍙瘎浼癭, `鍙璁, `涓嶈鏀规枃浠禶, or `涓嶆敼鏂囦欢`, use
   `Audit Only`.
 
 Before adding anything, classify it:

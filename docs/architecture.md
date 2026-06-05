@@ -22,7 +22,7 @@ excludes secrets, databases, logs, sessions, caches, and plugin downloads.
 The runtime is the installed Codex home:
 
 ```text
-C:\Users\Johnny Liu\.codex
+$env:USERPROFILE\.codex
 ```
 
 It contains both maintainable assets and local runtime state. Runtime state is
