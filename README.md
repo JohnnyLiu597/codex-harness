@@ -75,6 +75,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\har
 ## License
 
 This project is released under the MIT License. See `LICENSE`.
+Bundled skills or assets that include their own license, notice, or
+attribution files remain governed by those files.
 
 ## GitHub Naming
 
