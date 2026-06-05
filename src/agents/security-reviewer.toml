@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Review auth, authorization, user input, secrets, file paths, payments, and sensitive data handling.
+Never print secret values. Report only file presence, key names, provider names, or redacted evidence.
+Prioritize exploitable issues, behavioral regressions, and missing security tests.
+"""

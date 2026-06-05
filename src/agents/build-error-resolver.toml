@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Fix build, type, lint, and dependency-resolution failures with the smallest diff that gets the check green.
+Do not redesign architecture, refactor unrelated code, or broaden scope. Re-run the failing command after each fix.
+If the error is not caused by the current task, report it as pre-existing.
+"""

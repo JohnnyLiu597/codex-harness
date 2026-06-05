@@ -1,0 +1,64 @@
+{
+  "schema": "codex-project-harness-capabilities-v1",
+  "scope": "project",
+  "profiles": {
+    "core": true,
+    "runtime-evidence": false,
+    "verification-gate": false,
+    "trace-eval-trends": false,
+    "tool-failures": false,
+    "skill-surface": false,
+    "coordination": false,
+    "research": false,
+    "browser-runtime": false,
+    "github-ops": false,
+    "docs-office": false,
+    "domain-plugin": false,
+    "high-autonomy": false
+  },
+  "verification": {
+    "default": [
+      "scripts\\verify-harness.ps1",
+      "scripts\\check-all.ps1"
+    ],
+    "feature_evidence": [
+      "scripts\\check-features.ps1"
+    ],
+    "tool_evals": [
+      "scripts\\check-tool-evals.ps1"
+    ],
+    "coordination_records": [
+      "scripts\\new-session-summary.ps1",
+      "scripts\\new-agent-run.ps1",
+      "scripts\\new-learning-intake.ps1"
+    ],
+    "runtime_evidence": [
+      "scripts\\new-runtime-run.ps1",
+      "docs\\runtime.md"
+    ],
+    "verification_gate": [
+      "scripts\\invoke-verification-gate.ps1",
+      "docs\\verification-gate.md"
+    ],
+    "trace_eval_trends": [
+      "scripts\\summarize-trace-evals.ps1",
+      "docs\\trace-evals.md"
+    ],
+    "tool_failures": [
+      "scripts\\new-tool-failure.ps1",
+      "docs\\tool-failures.md"
+    ],
+    "skill_surface": [
+      "scripts\\audit-skill-surface.ps1",
+      "docs\\skill-surface.md"
+    ]
+  },
+  "notes": [
+    "Enable optional profiles only when the project actually needs them.",
+    "Use runtime evidence records for user-facing behavior and feature verification.",
+    "Use verification gate records when a task needs an explicit completion gate.",
+    "Use trace summaries, tool failure records, and skill stocktakes when repeated evidence needs trend or surface analysis.",
+    "Use coordination records when work crosses sessions, workers, or repeated failures.",
+    "Keep project-specific MCPs, tools, credentials, and smoke commands documented in docs/."
+  ]
+}

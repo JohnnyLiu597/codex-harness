@@ -1,0 +1,128 @@
+{
+  "schema": "codex-harness-capabilities-v1",
+  "scope": "global",
+  "codex_home": "C:\\Users\\Johnny Liu\\.codex",
+  "core": {
+    "runtime": "Codex-only",
+    "platform": "Windows-first",
+    "context_anchors": [
+      "AGENTS.md",
+      "mission.md",
+      "CONTEXT.md",
+      ".agent/rules.md",
+      "MEMORY.md",
+      "README.md"
+    ],
+    "mcp_servers": [
+      "github",
+      "context7",
+      "exa",
+      "memory",
+      "playwright",
+      "sequential-thinking"
+    ],
+    "safety": [
+      "safe-remove",
+      "quiet-local-hooks",
+      "secret-redaction",
+      "non-destructive-git"
+    ],
+    "evidence": [
+      "verify-global-harness",
+      "harness-evals",
+      "trace-evals",
+      "tool-evals",
+      "trace-eval-trends",
+      "tool-failure-records",
+      "skill-surface-stocktakes",
+      "harness-change-records",
+      "codex-workflow-core",
+      "hook-router",
+      "agent-pack",
+      "workflow-entry",
+      "test-surface-detection",
+      "runtime-runs",
+      "verification-gates",
+      "session-summaries",
+      "agent-run-records",
+      "learning-intake"
+    ]
+  },
+  "profiles": {
+    "core": "Always-on harness behavior, safety, project context, and verification.",
+    "runtime-evidence": "Real runtime run records linked to feature evidence for user-facing behavior.",
+    "verification-gate": "Optional manual gate for DocsOnly, HarnessOnly, Runtime, Full, and BeforeCommit verification modes.",
+    "trace-eval-trends": "Summaries and index files for comparing trace eval runs over time.",
+    "tool-failures": "Structured tool failure records for recovery and repeated-failure triage.",
+    "skill-surface": "Read-only stocktake of active skill count, trigger quality, provider-specific residue, and large skills.",
+    "codex-workflow-core": "Codex-only workflow-control pack: hook router, agent pack, workflow entry, and self-tests.",
+    "hook-router": "Metadata-only local hook event router with privacy-preserving Stop hook records.",
+    "agent-pack": "Role-specific Codex sub-agents for planning, testing, E2E evidence, build repair, security, docs, harness audit, regressions, and cleanup.",
+    "workflow-entry": "Command-style workflow script for plan, verify, TDD, E2E, review, security, learn, checkpoint, and orchestrate flows.",
+    "test-surface-detection": "Project test surface detector that recommends build, typecheck, lint, unit, E2E, smoke, runtime, and harness checks.",
+    "coordination": "Session handoff, worker run records, learning intake, and tool-surface discipline for long-running work.",
+    "research": "Current web/docs research through approved search and documentation tools.",
+    "browser-runtime": "Exploratory browser automation plus repeatable Playwright checks.",
+    "github-ops": "Repository, PR, issue, and CI operations when requested.",
+    "docs-office": "Document, spreadsheet, and presentation artifact workflows.",
+    "domain-plugin": "Project-specific plugins or MCPs enabled only when relevant.",
+    "high-autonomy": "Trusted local execution profile for known-safe repos and tasks."
+  },
+  "verification": {
+    "global": [
+      "scripts\\verify-global-harness.ps1",
+      "harness-evals\\run-harness-evals.ps1",
+      "scripts\\check-harness-surface.ps1",
+      "scripts\\harness-health.ps1"
+    ],
+    "project": [
+      "scripts\\verify-harness.ps1",
+      "scripts\\check-all.ps1",
+      "scripts\\check-features.ps1",
+      "scripts\\check-tool-evals.ps1"
+    ],
+    "coordination": [
+      "scripts\\new-session-summary.ps1",
+      "scripts\\new-agent-run.ps1",
+      "scripts\\new-learning-intake.ps1"
+    ],
+    "runtime_evidence": [
+      "scripts\\new-runtime-run.ps1",
+      "docs\\runtime.md"
+    ],
+    "verification_gate": [
+      "scripts\\invoke-verification-gate.ps1",
+      "docs\\verification-gate.md"
+    ],
+    "trace_eval_trends": [
+      "scripts\\summarize-trace-evals.ps1",
+      "docs\\trace-evals.md"
+    ],
+    "tool_failures": [
+      "scripts\\new-tool-failure.ps1",
+      "docs\\tool-failures.md"
+    ],
+    "skill_surface": [
+      "scripts\\audit-skill-surface.ps1",
+      "docs\\skill-surface.md"
+    ],
+    "codex_workflow_core": [
+      "docs\\codex-workflow-core.md",
+      "scripts\\codex-hook-router.ps1",
+      "scripts\\detect-project-test-surface.ps1",
+      "scripts\\invoke-codex-workflow.ps1",
+      "scripts\\test-codex-workflow-core.ps1",
+      "agents\\planner.toml",
+      "agents\\tester.toml",
+      "agents\\e2e-runner.toml",
+      "agents\\harness-auditor.toml"
+    ]
+  },
+  "known_warnings": [
+    {
+      "id": "provider-token-location",
+      "status": "accepted-risk",
+      "summary": "config.toml currently contains experimental_bearer_token for the custom model provider; migrate only after a supported replacement path is verified."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Turn repeated bugs, tool failures, and Codex behavior misses into durable regression artifacts.
+Choose the smallest useful destination: test, smoke run, runtime-run, trace eval, tool eval, learning intake, docs update, or focused skill change.
+Do not create broad new process for one-off feedback.
+"""

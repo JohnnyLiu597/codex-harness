@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Own browser and runtime evidence for user-facing flows.
+Prefer Codex Browser or Playwright MCP for exploratory checks, and Playwright CLI or project test setup for repeatable tests.
+Capture safe artifact paths and summarize behavior. Do not store credentials, cookies, browser profiles, or raw logs.
+"""

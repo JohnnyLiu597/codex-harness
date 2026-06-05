@@ -1,0 +1,118 @@
+# Global Codex command guardrails.
+#
+# This file is parsed as Starlark. Keep human-facing policy prose in
+# AGENTS.md/CODEX.md, and keep this file to machine-readable prefix rules.
+
+prefix_rule(
+    pattern = ["Get-Command"],
+    decision = "allow",
+    justification = "Read-only tool discovery is safe and helps avoid guessing installed tools.",
+)
+
+prefix_rule(
+    pattern = ["Get-ChildItem"],
+    decision = "allow",
+    justification = "Read-only filesystem listing is safe for workspace inspection.",
+)
+
+prefix_rule(
+    pattern = ["Get-Content"],
+    decision = "allow",
+    justification = "Reading files is safe for context gathering and verification.",
+)
+
+prefix_rule(
+    pattern = ["Select-String"],
+    decision = "allow",
+    justification = "Read-only text search is safe when ripgrep is unavailable.",
+)
+
+prefix_rule(
+    pattern = ["Test-Path"],
+    decision = "allow",
+    justification = "Path existence checks are safe for local harness verification.",
+)
+
+prefix_rule(
+    pattern = ["Resolve-Path"],
+    decision = "allow",
+    justification = "Path resolution is safe for confirming exact targets.",
+)
+
+prefix_rule(
+    pattern = ["rg"],
+    decision = "allow",
+    justification = "Ripgrep is the preferred read-only search tool.",
+)
+
+prefix_rule(
+    pattern = ["git", ["status", "diff", "log", "show", "branch"]],
+    decision = "allow",
+    justification = "Read-only git inspection is safe and expected during repo work.",
+)
+
+prefix_rule(
+    pattern = ["codex", "debug"],
+    decision = "allow",
+    justification = "Codex debug commands are needed to verify harness configuration.",
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Hard resets can destroy user work and require an explicit user request.",
+)
+
+prefix_rule(
+    pattern = ["git", "clean"],
+    decision = "forbidden",
+    justification = "Git clean can permanently remove untracked user files.",
+)
+
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "forbidden",
+    justification = "Recursive force deletion is not allowed by the safe deletion policy.",
+)
+
+prefix_rule(
+    pattern = ["Remove-Item"],
+    decision = "forbidden",
+    justification = "File removal should be confirmed or routed through safe-remove.ps1.",
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "down"],
+    decision = "forbidden",
+    justification = "Stopping and removing compose resources may disrupt local state.",
+)
+
+prefix_rule(
+    pattern = [["npm", "pnpm", "yarn"], ["install", "add"]],
+    decision = "forbidden",
+    justification = "Dependency changes can modify lockfiles and project state.",
+)
+
+prefix_rule(
+    pattern = ["pip", "install"],
+    decision = "forbidden",
+    justification = "Python dependency installs can change the local environment.",
+)
+prefix_rule(
+    pattern = ["Copy-Item"],
+    decision = "allow",
+    justification = "Copying files is used for reversible backups before global harness edits.",
+)
+
+prefix_rule(
+    pattern = ["python", "-m"],
+    decision = "allow",
+    justification = "Python module entry points are common read/build/test commands in project verification.",
+)
+prefix_rule(pattern=["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".\\scripts\\check-all.ps1", "-Runtime", "-SkipCargo"], decision="allow")
+
+prefix_rule(
+    pattern = ["npm", "run", "build"],
+    decision = "allow",
+    justification = "Project builds are expected verification commands and do not install dependencies.",
+)

@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Perform tightly scoped cleanup after behavior is already covered by tests or verification.
+Preserve public behavior, keep diffs small, and avoid crossing ownership boundaries.
+Run the nearest verification after cleanup.
+"""

@@ -1,0 +1,3 @@
+display_name: Project Harness Optimizer
+short_description: Explains, audits, repairs, and upgrades the user's Codex-only harness and turns real feedback into checks.
+default_prompt: Audit this Codex harness, explain the relevant layer, and repair or upgrade only the smallest necessary harness files with verification.

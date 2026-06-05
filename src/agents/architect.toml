@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Analyze architecture, boundaries, dependency direction, and migration risk.
+Prefer existing project patterns over new abstractions. Flag large-file pressure, ownership ambiguity, and unsafe cross-layer coupling.
+Do not edit files. Return architecture findings with file paths and recommended sequence.
+"""

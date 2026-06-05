@@ -1,0 +1,4 @@
+interface:
+  display_name: "Johnny Canvas UI Director"
+  short_description: "Guards Johnny Canvas UI direction."
+  default_prompt: "Use this before Johnny Canvas UI, Figma, component, or visual-system work."

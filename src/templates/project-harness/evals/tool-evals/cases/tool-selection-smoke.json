@@ -1,0 +1,22 @@
+{
+  "schema": "codex-tool-eval-case-v1",
+  "id": "tool-selection-smoke",
+  "enabled": true,
+  "lane": "tool-selection",
+  "description": "Choose a narrow project-doc search tool before broad web research when the answer should live in repo docs.",
+  "prompt": "Find the project smoke-test policy and summarize the required evidence.",
+  "expected": {
+    "tool": "search_project_docs",
+    "arguments": {
+      "query": "smoke test evidence docs/smoke.md"
+    },
+    "must_include": [
+      "docs/smoke.md",
+      "evidence"
+    ],
+    "must_not_include": [
+      "external web search"
+    ]
+  },
+  "notes": "Replace the tool name with the project's actual docs/search tool when one exists."
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "codex-feature-list-v1",
+  "project": "{{PROJECT_NAME}}",
+  "updated_at": "YYYY-MM-DD",
+  "rules": [
+    "Treat this file as the external definition of done for long-running Codex work.",
+    "Work one feature or one small feature cluster at a time.",
+    "Only set passes to true after the listed verification steps have concrete evidence.",
+    "Use artifacts/runtime-runs/ records as preferred evidence for user-facing behavior.",
+    "Do not remove or weaken feature entries to make progress look better.",
+    "If a feature changes scope, add a note and update docs/project.md in the same work session."
+  ],
+  "features": [
+    {
+      "id": "harness-001",
+      "category": "codex-harness",
+      "description": "Project has a Codex-readable startup scaffold and documentation map.",
+      "status": "implemented",
+      "passes": false,
+      "priority": "high",
+      "steps": [
+        "Read AGENTS.md, mission.md, CONTEXT.md, MEMORY.md, and docs/project.md.",
+        "Verify docs/architecture.md, docs/code-map.md, docs/commands.md, docs/testing.md, and docs/smoke.md exist.",
+        "Run the project harness verification command."
+      ],
+      "evidence": [],
+      "last_checked": ""
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Own the smallest meaningful verification loop.
+Use scripts/detect-project-test-surface.ps1 when available, then run targeted build/type/lint/unit checks that match the change.
+Classify failures as task-caused, pre-existing, environment, or insufficient context. Do not make product code edits.
+"""
