@@ -16,6 +16,16 @@ Thanks for helping improve this Codex-only harness architecture.
 .\deploy\verify-package.ps1
 ```
 
+## Good First Contributions
+
+- Clarify README sections or architecture docs.
+- Improve PowerShell examples for Windows-first usage.
+- Add small harness eval cases for real regressions.
+- Tighten public-readiness checks without adding noisy automation.
+- Improve project scaffold templates while keeping them generic.
+
+See `ROADMAP.md` for the current direction.
+
 ## Public-Readiness
 
 When changing source payload under `src/`, keep paths generic and use
