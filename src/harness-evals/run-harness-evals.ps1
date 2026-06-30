@@ -159,7 +159,15 @@ Invoke-Eval -Name "project-scaffold" -Script {
     if ($missing.Count -gt 0) {
         throw "missing scaffold files: $($missing -join ', ')"
     }
-    "scaffold generated expected files"
+    $testing = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\testing.md") -Raw
+    $smoke = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\smoke.md") -Raw
+    if ($testing -notmatch 'L0' -or $testing -notmatch 'L5' -or $testing -notmatch 'lowest verification layer') {
+        throw "testing scaffold does not describe the L0-L5 verification ladder"
+    }
+    if ($smoke -notmatch 'Do not run every available smoke' -or $smoke -notmatch 'blocked verification') {
+        throw "smoke scaffold does not describe risk-selected smoke and blocked verification"
+    }
+    "scaffold generated expected files and risk-tiered verification docs"
 }
 
 Invoke-Eval -Name "maturity-layer" -Script {

@@ -40,8 +40,8 @@ if (Test-Path -LiteralPath $featurePath) {
 $recommended = @(
     "Read AGENTS.md, CONTEXT.md, MEMORY.md, docs/project.md, docs/code-map.md, and docs/features.json.",
     "Run scripts/audit-worktree.ps1 before touching business code in this dirty repo.",
-    "Run scripts/check-all.ps1 for harness-only changes.",
-    "Use scripts/check-all.ps1 -Runtime or -Smoke when app behavior changes."
+    "Use docs/testing.md to choose the lowest sufficient L0-L5 verification layer.",
+    "Reserve scripts/check-all.ps1 and -Smoke for L5/high-risk or release-handoff work."
 )
 
 $record = [ordered]@{

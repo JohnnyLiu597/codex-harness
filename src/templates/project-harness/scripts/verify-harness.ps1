@@ -74,6 +74,6 @@ if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) { throw "rg not foun
 [ordered]@{
     status = "success"
     summary = "Harness scaffold and script syntax verified."
-    next_actions = @("Use scripts\check-all.ps1 for the default gate.", "Add project-specific smoke/runtime checks when app behavior changes.")
+    next_actions = @("Use docs\testing.md to choose the lowest sufficient L0-L5 verification layer.", "Reserve scripts\check-all.ps1 and -Smoke for L5/high-risk or release-handoff work.")
     artifacts = @($required | ForEach-Object { Join-Path $root $_ })
 } | ConvertTo-Json -Depth 5 -Compress

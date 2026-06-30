@@ -145,8 +145,9 @@ Use these recipes before inventing new process:
 
 - `plan`: read anchors, use `planner` or `architect`, create a plan only for
   major work.
-- `verify`: run `detect-project-test-surface.ps1`, then the smallest meaningful
-  command or `invoke-verification-gate.ps1`.
+- `verify`: run `detect-project-test-surface.ps1`, choose the lowest
+  sufficient L0-L5 layer from project `docs/testing.md`, then run that command
+  or `invoke-verification-gate.ps1`.
 - `tdd`: create/identify a failing test or reproduction first, then fix, then
   rerun the same check.
 - `e2e`: use Browser/Playwright for runtime behavior and record safe evidence
@@ -197,12 +198,24 @@ Use this checklist when the request touches sub-agents or role workflows:
 Use this checklist when the request touches verification or test closure:
 
 1. Detect the local test surface with `detect-project-test-surface.ps1`.
-2. For bugfixes, follow `reproduce -> fix -> rerun`; record the exact failing
+2. Classify the needed depth before running broad gates:
+   - L0 static/syntax/JSON/config
+   - L1 targeted regression
+   - L2 build/package/sync
+   - L3 light API/runtime probe
+   - L4 focused browser/UI smoke
+   - L5 full `check-all` or large smoke
+3. For bugfixes, follow `reproduce -> fix -> rerun`; record the exact failing
    and passing command when feasible.
-3. For harness-only changes, run the nearest self-test before global evals.
-4. For browser, desktop, generated-output, persistence, auth, or runtime
-   behavior, add runtime evidence with `new-runtime-run.ps1` or a smoke record.
-5. For repeated failures, add `new-tool-failure.ps1`,
+4. For harness-only changes, prefer L0/L1 nearest self-tests before global
+   evals. Do not default to `check-all` for docs-only or config-only edits.
+5. Add L4/L5 runtime evidence only when browser/desktop interaction,
+   persistence, auth, deployment, generated-output, or external-call risk
+   actually requires it.
+6. If browser/MCP/Playwright state is unhealthy, try one bounded recovery, then
+   record blocked verification plus residual risk instead of open-ended tool
+   debugging.
+7. For repeated failures, add `new-tool-failure.ps1`,
    `new-learning-intake.ps1`, or a trace/tool eval so the miss becomes
    searchable later.
 
@@ -692,7 +705,7 @@ After edits, verify the exact layer touched:
   `scripts\check-features.ps1`
 - tool eval fixtures:
   `scripts\check-tool-evals.ps1`
-- one-command project gate:
+- L5 project gate only when risk justifies it:
   `scripts\check-all.ps1 -TraceEvals`
 - explicit project verification gate:
   `scripts\invoke-verification-gate.ps1 -Mode HarnessOnly`

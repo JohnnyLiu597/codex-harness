@@ -164,8 +164,10 @@ the standard scaffold.
 - Put reusable smoke policy in `docs/smoke.md`; put project-specific baselines
   under `artifacts/smoke-baselines/` or `artifacts/smoke-runs/`.
 - Reuse an existing smoke baseline for docs, harness, and config-only changes.
-- Rerun smoke when user-facing behavior, routing, persistence, auth, browser
-  automation, deployment, or generated-output handling changes.
+- Use the `docs/testing.md` L0-L5 ladder to choose verification depth. Rerun
+  smoke only when the selected risk layer requires runtime/browser evidence:
+  startup/API persistence probes at L3, focused browser smoke at L4, and
+  `check-all`/large smoke at L5 for release-critical or cross-surface changes.
 - For major changes, create or update an `artifacts/plan_*.md` plan before
   editing business code. Use the global plan template in
   `~/.codex/templates/project-harness/major-task-plan.md` when helpful.
