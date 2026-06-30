@@ -38,6 +38,7 @@
       "harness-change-records",
       "codex-workflow-core",
       "hook-router",
+      "scheduled-maintenance",
       "agent-pack",
       "workflow-entry",
       "test-surface-detection",
@@ -57,6 +58,7 @@
     "skill-surface": "Read-only stocktake of active skill count, trigger quality, provider-specific residue, and large skills.",
     "codex-workflow-core": "Codex-only workflow-control pack: hook router, agent pack, workflow entry, and self-tests.",
     "hook-router": "Metadata-only local hook event router with privacy-preserving Stop hook records.",
+    "scheduled-maintenance": "Weekly Codex cron automation that runs harness health, bounded repairs, and verification.",
     "agent-pack": "Role-specific Codex sub-agents for planning, testing, E2E evidence, build repair, security, docs, harness audit, regressions, and cleanup.",
     "workflow-entry": "Command-style workflow script for plan, verify, TDD, E2E, review, security, learn, checkpoint, and orchestrate flows.",
     "test-surface-detection": "Project test surface detector that recommends build, typecheck, lint, unit, E2E, smoke, runtime, and harness checks.",
@@ -116,6 +118,11 @@
       "agents\\tester.toml",
       "agents\\e2e-runner.toml",
       "agents\\harness-auditor.toml"
+    ],
+    "scheduled_maintenance": [
+      "automations\\harness\\automation.toml.template",
+      "scripts\\harness-health.ps1",
+      "scripts\\verify-global-harness.ps1"
     ]
   },
   "known_warnings": [

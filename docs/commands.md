@@ -43,6 +43,9 @@ Use this only for Source Release lane work after the dry run is acceptable.
 .\deploy\sync-to-runtime.ps1
 ```
 
+This also renders the weekly harness automation template into
+`$env:USERPROFILE\.codex\automations\harness\automation.toml`.
+
 ## Verify Runtime
 
 ```powershell

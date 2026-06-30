@@ -15,6 +15,7 @@ if (-not $ProjectRoot) {
 $CodexHome = (Resolve-Path -LiteralPath $CodexHome).Path
 $srcRoot = Join-Path $ProjectRoot "src"
 $artifactsRoot = Join-Path $ProjectRoot "artifacts"
+$refreshBackup = ""
 
 function Copy-FileIfPresent {
     param([string]$RelativePath)
@@ -90,6 +91,7 @@ New-Item -ItemType Directory -Force -Path $artifactsRoot | Out-Null
 if ($Refresh -and (Test-Path -LiteralPath $srcRoot)) {
     $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $backup = Join-Path $artifactsRoot "sync-refresh-$stamp"
+    $refreshBackup = $backup
     New-Item -ItemType Directory -Force -Path $backup | Out-Null
     foreach ($item in @(Get-ChildItem -LiteralPath $srcRoot -Force)) {
         Move-Item -LiteralPath $item.FullName -Destination $backup
@@ -112,6 +114,19 @@ if (Copy-DirectoryIfPresent -RelativePath "harness-evals" -ExcludeDirectoryNames
 $skillCount = Copy-ActiveSkills
 $excludedEvalArtifacts = Move-GeneratedEvalArtifactsOutOfSource
 
+$sourceOnlyPreserved = New-Object System.Collections.Generic.List[string]
+if ($refreshBackup) {
+    foreach ($relative in @("automations")) {
+        $sourceOnly = Join-Path $refreshBackup $relative
+        if (Test-Path -LiteralPath $sourceOnly -PathType Container) {
+            $target = Join-Path $srcRoot $relative
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+            Copy-Item -LiteralPath $sourceOnly -Destination $target -Recurse -Force
+            $sourceOnlyPreserved.Add($relative) | Out-Null
+        }
+    }
+}
+
 $manifest = [ordered]@{
     schema = "codex-harness-source-sync-v1"
     synced_at = (Get-Date).ToString("o")
@@ -122,6 +137,7 @@ $manifest = [ordered]@{
     copied_directories = $copiedDirs.ToArray()
     copied_skill_count = $skillCount
     excluded_eval_artifacts = $excludedEvalArtifacts
+    source_only_preserved = $sourceOnlyPreserved.ToArray()
     excluded = @(
         "config.toml",
         "auth.json",
@@ -132,6 +148,7 @@ $manifest = [ordered]@{
         "plugins",
         "harness-health",
         "harness-changes",
+        "runtime-generated automations except source templates",
         "harness-evals/runs",
         "harness-evals/trace-evals/runs",
         "harness-evals/trace-evals/summaries",
@@ -152,5 +169,6 @@ $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -En
     copied_directories = $copiedDirs.ToArray()
     copied_skill_count = $skillCount
     excluded_eval_artifacts = $excludedEvalArtifacts
+    source_only_preserved = $sourceOnlyPreserved.ToArray()
     manifest = $manifestPath
 } | ConvertTo-Json -Depth 8 -Compress

@@ -1,0 +1,13 @@
+version = 1
+id = "harness"
+kind = "cron"
+name = "Harness Weekly Optimization"
+prompt = "You are the weekly maintenance automation for this Codex-only harness. Use Simplified Chinese for the final report. Read the global harness context at __CODEX_HOME_TOML_CONTENT__\\AGENTS.md and __CODEX_HOME_TOML_CONTENT__\\CODEX.md, then read the project-harness-optimizer skill if available. Do not read or print secrets, auth files, cookies, tokens, browser session data, SQLite logs, or cache contents. Run: powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\harness-health.ps1\". If health fails, inspect only the generated health summary and the minimum related harness files, then make the smallest reversible repair under __CODEX_HOME_TOML_CONTENT__ to harness docs, scripts, templates, skills, automations, or non-secret config. Do not modify business project code. Re-run: powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\verify-global-harness.ps1\". Run harness evals when the health failure or repair affects global behavior. Report status, changes, commands, artifacts, and any manual follow-up."
+status = "ACTIVE"
+rrule = "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0;BYSECOND=0"
+model = "gpt-5.4"
+reasoning_effort = "high"
+execution_environment = "local"
+cwds = [__PROJECT_ROOT_TOML_STRING__]
+created_at = __NOW_MS__
+updated_at = __NOW_MS__

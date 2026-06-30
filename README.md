@@ -62,6 +62,7 @@ the package, and syncing source back to the runtime.
 - Codex sub-agent profiles for planning, review, testing, docs, security, and
   harness auditing.
 - Hook routing and stop-log scripts designed to stay quiet and local.
+- A weekly Codex automation template for harness health and small repairs.
 - Workflow scripts for test-surface detection, verification, and harness
   checks.
 - Project scaffold templates for long-running repositories.
@@ -107,6 +108,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scr
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
 
+`sync-to-runtime.ps1` also renders the weekly harness automation template to:
+
+```text
+$env:USERPROFILE\.codex\automations\harness\automation.toml
+```
+
 ## Maintenance Lanes
 
 Use Runtime Hotfix for day-to-day harness improvements:
@@ -128,7 +135,9 @@ without changing files.
 
 The repository intentionally does not publish `config.toml`, `auth.json`,
 SQLite state, logs, sessions, plugin caches, browser state, generated eval runs,
-or machine-local runtime artifacts. The package verifier checks this boundary.
+or machine-local runtime artifacts. Automation source is stored as a template
+and rendered with local paths during install. The package verifier checks this
+boundary.
 
 Bundled skills or assets with their own license, notice, or attribution files
 keep those local terms. The top-level license covers the project-specific

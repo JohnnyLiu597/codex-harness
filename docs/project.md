@@ -11,6 +11,7 @@ published without leaking local state.
 
 - Global Codex instructions and durable behavior notes.
 - Harness capability manifest.
+- Weekly harness automation template.
 - Lightweight policy docs.
 - PowerShell maintenance scripts.
 - Project scaffold templates.
@@ -34,3 +35,5 @@ published without leaking local state.
 - Import script: `deploy/sync-from-runtime.ps1`
 - Install script: `deploy/sync-to-runtime.ps1`
 - Package check: `deploy/verify-package.ps1`
+- Weekly automation template:
+  `src/automations/harness/automation.toml.template`

@@ -57,6 +57,7 @@ foreach ($path in @(
     "src\AGENTS.md",
     "src\CODEX.md",
     "src\harness.capabilities.json",
+    "src\automations\harness\automation.toml.template",
     "src\agents\explorer.toml",
     "src\agents\reviewer.toml",
     "src\agents\docs-researcher.toml",
@@ -94,6 +95,25 @@ if (Test-Path -LiteralPath $srcRoot) {
         Add-Check -Name "forbidden-runtime-files" -Status "passed" -Detail "none found"
     } else {
         Add-Check -Name "forbidden-runtime-files" -Status "failed" -Detail (($forbidden | Select-Object -First 20 -ExpandProperty FullName) -join "; ")
+    }
+}
+
+$automationTemplatePath = Join-Path $srcRoot "automations\harness\automation.toml.template"
+if (Test-Path -LiteralPath $automationTemplatePath) {
+    $template = Get-Content -LiteralPath $automationTemplatePath -Raw
+    $missingPlaceholders = @("__CODEX_HOME_TOML_CONTENT__", "__PROJECT_ROOT_TOML_STRING__", "__NOW_MS__") | Where-Object {
+        $template -notmatch [regex]::Escape($_)
+    }
+    if ($missingPlaceholders.Count -eq 0) {
+        Add-Check -Name "automation-template-placeholders" -Status "passed" -Detail "all placeholders present"
+    } else {
+        Add-Check -Name "automation-template-placeholders" -Status "failed" -Detail ($missingPlaceholders -join ", ")
+    }
+
+    if ($template -match 'C:\\Users\\' -or $template -match 'experimental_bearer_token|bearer_token|api[_-]?key|auth\.json|token\s*=') {
+        Add-Check -Name "automation-template-public-readiness" -Status "failed" -Detail "template contains machine-local path or secret-like field"
+    } else {
+        Add-Check -Name "automation-template-public-readiness" -Status "passed" -Detail "no machine-local path or secret-like field"
     }
 }
 

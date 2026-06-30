@@ -14,6 +14,7 @@ The package check verifies:
 
 - Required project files exist.
 - Required runtime payload files exist in `src/`.
+- The weekly automation template has placeholders and no machine-local path.
 - Forbidden runtime files are absent from `src/`.
 - PowerShell scripts parse.
 - JSON manifests parse.

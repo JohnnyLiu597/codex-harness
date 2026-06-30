@@ -53,6 +53,7 @@ The source payload currently includes:
 - `AGENTS.md`
 - `CODEX.md`
 - `harness.capabilities.json`
+- `automations/` templates
 - `agents/`
 - `docs/`
 - `rules/`
@@ -64,3 +65,8 @@ The source payload currently includes:
 `config.toml` is intentionally not copied. It can contain local provider setup
 or authentication-adjacent details and should remain machine-local unless a
 sanitized template is created later.
+
+Automation templates are source assets, not raw runtime state. During
+`deploy/sync-to-runtime.ps1`, placeholders are rendered into
+`$env:USERPROFILE\.codex\automations\harness\automation.toml` with local paths
+and timestamps.
