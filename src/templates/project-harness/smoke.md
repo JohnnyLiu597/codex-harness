@@ -40,6 +40,20 @@ or changes that alter safety boundaries around auth, external APIs, paid
 providers, browser automation, save/submit/publish actions, or destructive
 data operations.
 
+## Reusable Smoke Scripts
+
+Recurring L4 browser smokes should be project-local scripts, not one-off
+PowerShell string-built JavaScript. A reusable smoke script must be idempotent:
+it can create and clean a fixed temporary runtime or object, tolerate "not
+found" or HTTP 404 during pre-cleanup, use known-valid fixtures, avoid real
+external calls, and leave no real user data behind.
+
+Give every runtime smoke a bounded timeout. On timeout or unhealthy browser
+tool state, write the steps completed so far plus a blocked verification record
+with the remaining risk. For upload UI checks, prefer setting a known file input
+directly through the browser automation API when that covers the DOM contract;
+reserve file chooser flows for bugs that specifically depend on the chooser.
+
 ## Tool Blockers
 
 If the browser/MCP/Playwright/runtime tool is unhealthy, try one bounded

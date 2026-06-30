@@ -36,6 +36,13 @@ Use reusable scripts for repeated browser paths. Avoid ad hoc Playwright or MCP
 snippets for routine checks; if a path recurs, add a project-local script under
 `scripts\` and document it in `docs\smoke.md`.
 
+Reusable L4 smoke scripts must close the loop without manual repair. They
+should use idempotent setup and cleanup, allow "not found" or HTTP 404 when
+pre-cleaning temporary resources, create valid fixture files, use fixed
+temporary runtimes or names, and enforce a bounded timeout. If the timeout or
+tool state blocks the run, write partial evidence and a blocked verification
+record instead of leaving the caller with a silent hang.
+
 If browser tooling is abnormal, such as stale file chooser state, missing
 Playwright, an occupied temp port, login/quota blockers, or noisy dev-server
 cleanup, try one bounded recovery. Then record "verification blocked" and the

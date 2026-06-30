@@ -41,5 +41,8 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-06-30: Hardened project harness smoke guidance so reusable L4 scripts
+  must be idempotent, tolerate missing temporary resources, use bounded
+  timeouts, and record blocked verification instead of hanging.
 - 2026-06-30: Added Fast/Standard/Full release verification so GitHub pushes
   do not default to runtime install plus deterministic evals.

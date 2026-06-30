@@ -215,7 +215,15 @@ Use this checklist when the request touches verification or test closure:
 6. If browser/MCP/Playwright state is unhealthy, try one bounded recovery, then
    record blocked verification plus residual risk instead of open-ended tool
    debugging.
-7. For repeated failures, add `new-tool-failure.ps1`,
+7. For reusable L4 smoke scripts, require idempotent setup/cleanup, fixed
+   temporary resources, valid fixtures, allowed "not found" or HTTP 404 during
+   pre-cleanup, bounded timeouts, partial evidence on timeout, and no real
+   provider/save/submit/publish side effects.
+8. Prefer project-local reusable scripts over ad hoc PowerShell-composed
+   Playwright snippets. For upload checks, avoid file chooser flows unless the
+   bug is specifically about the chooser; set the known file input directly
+   when that covers the DOM contract.
+9. For repeated failures, add `new-tool-failure.ps1`,
    `new-learning-intake.ps1`, or a trace/tool eval so the miss becomes
    searchable later.
 

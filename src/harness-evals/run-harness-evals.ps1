@@ -68,6 +68,10 @@ Invoke-Eval -Name "optimizer-workflow-routing" -Script {
         "new-agent-run.ps1",
         "verify-release.ps1",
         "lowest sufficient release gate",
+        "idempotent setup/cleanup",
+        "allowed `"not found`" or HTTP 404",
+        "bounded timeouts",
+        "partial evidence on timeout",
         "harness-auditor",
         "regression-miner"
     )) {
@@ -166,8 +170,14 @@ Invoke-Eval -Name "project-scaffold" -Script {
     if ($testing -notmatch 'L0' -or $testing -notmatch 'L5' -or $testing -notmatch 'lowest verification layer') {
         throw "testing scaffold does not describe the L0-L5 verification ladder"
     }
+    if ($testing -notmatch 'idempotent setup and cleanup' -or $testing -notmatch 'HTTP 404' -or $testing -notmatch 'bounded timeout') {
+        throw "testing scaffold does not describe reusable smoke idempotency and timeout evidence"
+    }
     if ($smoke -notmatch 'Do not run every available smoke' -or $smoke -notmatch 'blocked verification') {
         throw "smoke scaffold does not describe risk-selected smoke and blocked verification"
+    }
+    if ($smoke -notmatch 'Reusable Smoke Scripts' -or $smoke -notmatch 'not\s+found' -or $smoke -notmatch 'known-valid fixtures' -or $smoke -notmatch 'bounded timeout') {
+        throw "smoke scaffold does not describe reusable L4 smoke closure rules"
     }
     "scaffold generated expected files and risk-tiered verification docs"
 }
