@@ -1,8 +1,8 @@
 version = 1
 id = "harness"
 kind = "cron"
-name = "Harness Weekly Optimization"
-prompt = "You are the weekly maintenance automation for this Codex-only harness. Use Simplified Chinese for the final report. Read the global harness context at __CODEX_HOME_TOML_CONTENT__\\AGENTS.md and __CODEX_HOME_TOML_CONTENT__\\CODEX.md, then read the project-harness-optimizer skill if available. Do not read or print secrets, auth files, cookies, tokens, browser session data, SQLite logs, or cache contents. Run: powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\harness-health.ps1\". If health fails, inspect only the generated health summary and the minimum related harness files, then make the smallest reversible repair under __CODEX_HOME_TOML_CONTENT__ to harness docs, scripts, templates, skills, automations, or non-secret config. Do not modify business project code. Re-run: powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\verify-global-harness.ps1\". Run harness evals when the health failure or repair affects global behavior. Report status, changes, commands, artifacts, and any manual follow-up."
+name = "Harness 每周自动优化"
+prompt = "你是 Johnny 的 Codex-only harness 每周自动优化任务。默认使用简体中文。先读取全局 harness 上下文 __CODEX_HOME_TOML_CONTENT__\\AGENTS.md、__CODEX_HOME_TOML_CONTENT__\\CODEX.md，以及 project-harness-optimizer skill；不要读取或输出 secrets、auth.json、cookie、token、SQLite 日志、缓存内容或浏览器会话。运行全局 harness 健康检查和回归检查：powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\harness-health.ps1\"。如果失败，只读取本次 health summary 和最小相关脚本/配置，做最小可逆修复，仅限 __CODEX_HOME_TOML_CONTENT__ 下的 harness 文档、脚本、模板、技能、automations 或非敏感配置，不要修改业务项目代码。修复后运行 powershell -NoProfile -ExecutionPolicy Bypass -File \"__CODEX_HOME_TOML_CONTENT__\\scripts\\verify-global-harness.ps1\"；当失败或修复影响全局行为时，再运行 __CODEX_HOME_TOML_CONTENT__\\harness-evals\\run-harness-evals.ps1。最后给出简短报告：状态、改动、验证命令结果、生成的 health/eval artifact 路径、仍需人工处理的事项。"
 status = "ACTIVE"
 rrule = "FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0;BYSECOND=0"
 model = "gpt-5.4"

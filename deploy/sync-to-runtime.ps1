@@ -32,18 +32,6 @@ function Assert-InCodexHome {
     }
 }
 
-function ConvertTo-TomlBasicStringContent {
-    param([string]$Value)
-
-    return $Value.Replace('\', '\\').Replace('"', '\"').Replace("`r", '\r').Replace("`n", '\n').Replace("`t", '\t')
-}
-
-function ConvertTo-TomlBasicString {
-    param([string]$Value)
-
-    return '"' + (ConvertTo-TomlBasicStringContent -Value $Value) + '"'
-}
-
 function Copy-FileToRuntime {
     param([string]$RelativePath)
 
@@ -76,30 +64,10 @@ function Copy-DirectoryToRuntime {
     return $true
 }
 
-function Sync-HarnessAutomationTemplate {
-    $template = Join-Path $srcRoot "automations\harness\automation.toml.template"
-    if (-not (Test-Path -LiteralPath $template -PathType Leaf)) { return $false }
-
-    $target = Join-Path $CodexHome "automations\harness\automation.toml"
-    Assert-InCodexHome -Path $target
-    if ($DryRun) { return $true }
-
-    $nowMs = [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
-    $content = Get-Content -LiteralPath $template -Raw
-    $content = $content.Replace("__CODEX_HOME_TOML_CONTENT__", (ConvertTo-TomlBasicStringContent -Value $CodexHome))
-    $content = $content.Replace("__PROJECT_ROOT_TOML_STRING__", (ConvertTo-TomlBasicString -Value $ProjectRoot))
-    $content = $content.Replace("__NOW_MS__", [string]$nowMs)
-
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
-    Set-Content -LiteralPath $target -Value $content -Encoding UTF8
-    return $true
-}
-
 $planned = @(
     "AGENTS.md",
     "CODEX.md",
     "harness.capabilities.json",
-    "automations",
     "agents",
     "docs",
     "rules",
@@ -132,9 +100,6 @@ foreach ($dir in @("agents", "docs", "rules", "scripts", "templates", "skills"))
 if (Copy-DirectoryToRuntime -RelativePath "harness-evals" -ExcludeDirectoryNames @("runs")) {
     $copied.Add("harness-evals") | Out-Null
 }
-if (Sync-HarnessAutomationTemplate) {
-    $copied.Add("automations\harness\automation.toml") | Out-Null
-}
 
 [ordered]@{
     status = if ($DryRun) { "dry-run" } else { "success" }
@@ -142,5 +107,7 @@ if (Sync-HarnessAutomationTemplate) {
     codex_home = $CodexHome
     source_root = $srcRoot
     copied = $copied.ToArray()
+    automation_template = "src\automations\harness\automation.toml.template"
+    automation_note = "Register or update Codex App automations with the app automation_update tool; raw file sync alone does not make an automation visible in the app."
     backup = $backupDir
 } | ConvertTo-Json -Depth 8 -Compress

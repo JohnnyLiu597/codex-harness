@@ -43,8 +43,10 @@ Use this only for Source Release lane work after the dry run is acceptable.
 .\deploy\sync-to-runtime.ps1
 ```
 
-This also renders the weekly harness automation template into
-`$env:USERPROFILE\.codex\automations\harness\automation.toml`.
+This syncs maintainable harness payload. It intentionally does not raw-register
+Codex App automations; create or update recurring tasks through the app
+automation surface using `src\automations\harness\automation.toml.template` as
+the source prompt.
 
 ## Verify Runtime
 

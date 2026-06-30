@@ -108,11 +108,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scr
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
 
-`sync-to-runtime.ps1` also renders the weekly harness automation template to:
+The weekly automation template lives at:
 
 ```text
-$env:USERPROFILE\.codex\automations\harness\automation.toml
+src\automations\harness\automation.toml.template
 ```
+
+Create or update the actual recurring task through Codex App's automation
+surface. Raw file sync alone is not enough to make a task visible in the app.
 
 ## Maintenance Lanes
 
@@ -135,9 +138,9 @@ without changing files.
 
 The repository intentionally does not publish `config.toml`, `auth.json`,
 SQLite state, logs, sessions, plugin caches, browser state, generated eval runs,
-or machine-local runtime artifacts. Automation source is stored as a template
-and rendered with local paths during install. The package verifier checks this
-boundary.
+or machine-local runtime artifacts. Automation source is stored as a template;
+the app-owned recurring task is registered separately through Codex App. The
+package verifier checks this boundary.
 
 Bundled skills or assets with their own license, notice, or attribution files
 keep those local terms. The top-level license covers the project-specific

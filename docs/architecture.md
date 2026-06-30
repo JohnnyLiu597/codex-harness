@@ -66,7 +66,6 @@ The source payload currently includes:
 or authentication-adjacent details and should remain machine-local unless a
 sanitized template is created later.
 
-Automation templates are source assets, not raw runtime state. During
-`deploy/sync-to-runtime.ps1`, placeholders are rendered into
-`$env:USERPROFILE\.codex\automations\harness\automation.toml` with local paths
-and timestamps.
+Automation templates are source assets, not raw runtime state. The actual
+recurring task is registered through Codex App's automation surface; directly
+syncing a TOML file can leave a file on disk without a visible app task.
