@@ -39,12 +39,20 @@ Default runtime hotfix maintenance:
 Source release maintenance:
 
 ```text
-edit src/ -> deploy/verify-package.ps1 -> deploy/sync-to-runtime.ps1 -DryRun -> deploy/sync-to-runtime.ps1 -> runtime verification
+edit src/ -> deploy/verify-release.ps1 -Level Fast/Standard/Full -> commit/push
 ```
 
 Use the source release path only for explicit GitHub, release, publish, commit,
 source-project, or source-code work. Runtime hotfix is the default so the
 current Codex install benefits immediately from harness repairs.
+
+The source release path is risk-tiered:
+
+- `Fast`: git whitespace plus package public-readiness; no runtime mutation.
+- `Standard`: Fast plus runtime sync preview; add `-InstallRuntime` only when
+  the local runtime should receive the source change.
+- `Full`: install runtime, run global verification, and run deterministic
+  harness evals.
 
 ## Runtime Payload
 

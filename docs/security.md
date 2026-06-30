@@ -24,7 +24,7 @@ create a sanitized `config.example.toml` with placeholders only.
 Before publishing to GitHub, run:
 
 ```powershell
-.\deploy\verify-package.ps1
+.\deploy\verify-release.ps1 -Level Fast
 git status --short
 ```
 

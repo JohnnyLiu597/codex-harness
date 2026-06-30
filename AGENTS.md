@@ -31,19 +31,31 @@ Read these files in order when present:
 Default harness maintenance uses the Runtime Hotfix lane:
 
 1. Edit the installed runtime under `$env:USERPROFILE\.codex`.
-2. Verify the runtime with:
+2. Verify the nearest changed surface. Use global runtime verification when
+   global config, scripts, templates, hooks, skills, or agents changed:
    `powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"`.
-3. Sync safe maintainable payload back into this repository with
-   `.\deploy\sync-from-runtime.ps1 -Refresh`.
-4. Run `.\deploy\verify-package.ps1`.
-5. Run deterministic evals with:
+3. Run deterministic evals only when hook, agent, workflow, eval, sync,
+   public-readiness, or release-critical behavior changed:
    `powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"`.
+4. Sync safe maintainable payload back into this repository with
+   `.\deploy\sync-from-runtime.ps1 -Refresh`.
+5. Run `.\deploy\verify-release.ps1 -Level Fast` for the source package,
+   escalating to Standard or Full when risk justifies it.
 
 Use the Source Release lane only when the user explicitly asks for GitHub,
 release, publish, commit, source-project, or source-code work. In that lane,
-edit `src/`, run `.\deploy\verify-package.ps1`, preview with
-`.\deploy\sync-to-runtime.ps1 -DryRun`, install with
-`.\deploy\sync-to-runtime.ps1`, then verify the runtime.
+edit `src/`, then choose the lowest sufficient release gate:
+
+- `.\deploy\verify-release.ps1 -Level Fast` for docs, templates, skills, and
+  low-risk script changes before commit/push.
+- `.\deploy\verify-release.ps1 -Level Standard` when runtime sync preview is
+  relevant; add `-InstallRuntime` only when the local runtime should receive
+  the source change.
+- `.\deploy\verify-release.ps1 -Level Full` for hook, agent, workflow, eval,
+  sync, public-readiness, or release-critical changes.
+
+Do not default every GitHub push to runtime install plus deterministic evals.
+Use heavier checks only when the changed surface justifies them.
 
 ## Safety
 

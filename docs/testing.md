@@ -1,6 +1,24 @@
 # Testing
 
-Testing has two levels.
+Testing uses a risk-tiered release gate for this harness source project.
+
+## Release Verification
+
+Run the lowest sufficient gate before committing or pushing:
+
+```powershell
+.\deploy\verify-release.ps1 -Level Fast
+```
+
+| Level | What it runs | Use when | Skip when |
+|---|---|---|---|
+| Fast | `git diff --check`, `git diff --cached --check`, and package public-readiness | docs, templates, skills, low-risk scripts, wording-only policy changes | runtime install, sync behavior, hooks, agents, workflow scripts, or eval behavior changed |
+| Standard | Fast plus `sync-to-runtime -DryRun`; optionally install with `-InstallRuntime` and run global runtime verification | runtime payload changed and sync preview matters | docs-only changes or changes that clearly do not affect runtime payload |
+| Full | Standard with runtime install, global verification, and deterministic harness evals | hooks, agents, workflow-control scripts, evals, sync scripts, public-readiness rules, or release-critical changes | routine docs/skill/template edits already covered by Fast or Standard |
+
+Do not run deterministic harness evals as a default closure step for every
+GitHub push. They are regression evidence for high-risk harness behavior, not a
+tax on every typo fix.
 
 ## Package Verification
 
@@ -22,7 +40,7 @@ The package check verifies:
 
 ## Runtime Verification
 
-Run this after syncing to `$env:USERPROFILE\.codex`:
+Run this after intentionally syncing to `$env:USERPROFILE\.codex`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"

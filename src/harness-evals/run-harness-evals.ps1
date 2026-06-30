@@ -66,6 +66,8 @@ Invoke-Eval -Name "optimizer-workflow-routing" -Script {
         "reproduce -> fix -> rerun",
         "new-tool-failure.ps1",
         "new-agent-run.ps1",
+        "verify-release.ps1",
+        "lowest sufficient release gate",
         "harness-auditor",
         "regression-miner"
     )) {

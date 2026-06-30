@@ -222,7 +222,9 @@ Use this checklist when the request touches verification or test closure:
 ### Completion Gates For Workflow Core Work
 
 After editing hooks, agents, workflow scripts, test-surface detection,
-verification gates, or this skill, run the nearest meaningful subset:
+verification gates, or this skill, run the nearest meaningful subset. Do not
+turn every docs, template, or skill wording change into global verification
+plus deterministic evals.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\test-codex-workflow-core.ps1"
@@ -230,8 +232,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scr
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
 ```
 
-Then sync runtime to source with `deploy\sync-from-runtime.ps1 -Refresh` and
-run `deploy\verify-package.ps1`.
+Use the workflow core self-test for hook/workflow routing changes. Use global
+runtime verification after installing into `$env:USERPROFILE\.codex`. Use
+deterministic harness evals for hook, agent, workflow, eval, sync,
+public-readiness, or release-critical changes.
+
+For `codex-harness` Source Release work, prefer the project release gate:
+
+```powershell
+.\deploy\verify-release.ps1 -Level Fast
+.\deploy\verify-release.ps1 -Level Standard
+.\deploy\verify-release.ps1 -Level Full
+```
+
+Then commit or push only after the selected gate passes.
 
 ### Maintained Source Project
 
@@ -272,9 +286,10 @@ Lane router:
   `<repo>\deploy\sync-from-runtime.ps1
   -Refresh`, then run the source package checks.
 - For explicit GitHub, release, publish, source-project, source-code, or commit
-  work, edit `<repo>\src` first,
-  verify the package, then sync to the runtime with
-  `deploy\sync-to-runtime.ps1`.
+  work, edit `<repo>\src` first, then use
+  `deploy\verify-release.ps1 -Level Fast|Standard|Full` based on risk.
+  Runtime sync is optional for Fast/Standard and should happen only when the
+  current local Codex runtime should receive the source change.
 - Never copy runtime-only state into the source project: `config.toml`,
   `auth.json`, SQLite files, logs, sessions, plugin cache, browser state,
   backups, or generated eval/run artifacts.
@@ -284,8 +299,10 @@ Use these lanes:
 - `Runtime Hotfix`: default lane. Patch `.codex`, verify runtime, sync back to
   `codex-harness`, verify source package.
 - `Source Release`: when preparing GitHub/release/commit work. Patch
-  `codex-harness\src`, verify package, dry-run sync, then install to `.codex`
-  only when appropriate.
+  `codex-harness\src`, then run the lowest sufficient release gate:
+  Fast for docs/templates/skills/low-risk scripts, Standard for sync-preview
+  evidence or optional runtime install, and Full for hooks, agents, workflow
+  scripts, evals, sync scripts, public-readiness, or release-critical changes.
 - `Audit Only`: inspect both surfaces and report drift without editing.
 
 Important current global choices:
@@ -697,6 +714,8 @@ After edits, verify the exact layer touched:
   `~\.codex\scripts\verify-global-harness.ps1`
 - global regression:
   `~\.codex\harness-evals\run-harness-evals.ps1`
+- codex-harness source release:
+  `deploy\verify-release.ps1 -Level Fast|Standard|Full`
 - project onboarding:
   `~\.codex\scripts\audit-project-harness.ps1 -ProjectRoot <repo>`
 - project harness:

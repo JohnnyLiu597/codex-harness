@@ -27,6 +27,25 @@ re-importing.
 .\deploy\verify-package.ps1
 ```
 
+## Verify Release
+
+Use this before committing or pushing source changes. Pick the lowest level
+that covers the risk.
+
+```powershell
+.\deploy\verify-release.ps1 -Level Fast
+.\deploy\verify-release.ps1 -Level Standard
+.\deploy\verify-release.ps1 -Level Standard -InstallRuntime
+.\deploy\verify-release.ps1 -Level Full
+```
+
+- `Fast`: git whitespace plus package public-readiness. No runtime install and
+  no deterministic evals.
+- `Standard`: Fast plus `sync-to-runtime -DryRun`; with `-InstallRuntime`, also
+  installs to `$env:USERPROFILE\.codex` and runs global runtime verification.
+- `Full`: installs to runtime, runs global runtime verification, and runs
+  deterministic harness evals.
+
 ## Preview Install
 
 Use this only for Source Release lane work after editing `src/`.

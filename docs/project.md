@@ -35,5 +35,11 @@ published without leaking local state.
 - Import script: `deploy/sync-from-runtime.ps1`
 - Install script: `deploy/sync-to-runtime.ps1`
 - Package check: `deploy/verify-package.ps1`
+- Release gate: `deploy/verify-release.ps1`
 - Weekly automation template:
   `src/automations/harness/automation.toml.template`
+
+## Recent Changes
+
+- 2026-06-30: Added Fast/Standard/Full release verification so GitHub pushes
+  do not default to runtime install plus deterministic evals.

@@ -89,6 +89,12 @@ Verify the repository package:
 .\deploy\verify-package.ps1
 ```
 
+Run the release gate before commit or push:
+
+```powershell
+.\deploy\verify-release.ps1 -Level Fast
+```
+
 Preview an install into the local runtime:
 
 ```powershell
@@ -128,8 +134,14 @@ runtime -> verify runtime -> sync-from-runtime -> verify package
 Use Source Release for GitHub, release, publish, or source-project work:
 
 ```text
-src -> verify package -> sync-to-runtime -DryRun -> sync-to-runtime -> verify runtime
+src -> verify-release Fast/Standard/Full -> commit/push
 ```
+
+`Fast` is the default for docs, templates, skills, and low-risk scripts. It
+checks git whitespace and package public-readiness without installing runtime
+or running deterministic evals. `Standard` adds runtime sync preview and can
+install the local runtime with `-InstallRuntime`. `Full` installs runtime,
+runs global verification, and runs deterministic harness evals.
 
 Use Audit Only when you only want to inspect drift, public-readiness, or health
 without changing files.

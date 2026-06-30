@@ -48,6 +48,7 @@ foreach ($path in @(
     "docs\security.md",
     "deploy\sync-from-runtime.ps1",
     "deploy\sync-to-runtime.ps1",
+    "deploy\verify-release.ps1",
     "deploy\verify-package.ps1"
 )) {
     Test-RequiredPath -RelativePath $path
