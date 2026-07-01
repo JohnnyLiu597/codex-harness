@@ -43,6 +43,16 @@ function Invoke-Eval {
 
 Invoke-Eval -Name "global-config" -Script {
     & (Join-Path $codexHomePath "scripts\verify-global-harness.ps1") -CodexHome $codexHomePath | Out-Null
+    $agents = Get-Content -LiteralPath (Join-Path $codexHomePath "AGENTS.md") -Raw
+    foreach ($required in @(
+        @{ Name = "reasoning budget"; Pattern = "Spend reasoning budget on the task" },
+        @{ Name = "optional commentary"; Pattern = "Do not send optional commentary" },
+        @{ Name = "meaningful state updates"; Pattern = "short,\s+factual,\s+and\s+tied\s+to\s+meaningful\s+state\s+changes" }
+    )) {
+        if ($agents -notmatch $required.Pattern) {
+            throw "global AGENTS.md is missing quiet commentary guidance: $($required.Name)"
+        }
+    }
     "global config and script syntax verified"
 }
 

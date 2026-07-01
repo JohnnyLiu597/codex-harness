@@ -19,6 +19,11 @@ would add noise without improving safety.
 
 - The user works across foreign-trade operations, creative writing and AI media,
   AI software, automation, and product experiments.
+- Progress commentary should be quiet by default. Avoid optional narration that
+  merely says Codex is thinking or continuing; prefer concise updates only when
+  they help the user understand a meaningful state change, blocker, or
+  long-running command. If the active surface requires periodic progress
+  updates, keep them low-cost and evidence-driven.
 - Treat practical leverage as valuable: automation, lower setup cost,
   reusable scripts, API-driven workflows, and productizable tools are often
   worth mentioning when they fit the task.

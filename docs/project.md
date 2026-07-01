@@ -41,6 +41,9 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-07-01: Added quiet-commentary guidance to the global harness so Codex
+  avoids optional progress narration while preserving concise required status
+  updates for meaningful state changes and long-running commands.
 - 2026-06-30: Hardened project harness smoke guidance so reusable L4 scripts
   must be idempotent, tolerate missing temporary resources, use bounded
   timeouts, and record blocked verification instead of hanging.
