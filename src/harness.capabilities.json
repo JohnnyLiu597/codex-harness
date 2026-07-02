@@ -44,6 +44,7 @@
       "test-surface-detection",
       "runtime-runs",
       "verification-gates",
+      "loop-policy",
       "session-summaries",
       "agent-run-records",
       "learning-intake"
@@ -53,6 +54,7 @@
     "core": "Always-on harness behavior, safety, project context, and verification.",
     "runtime-evidence": "Real runtime run records linked to feature evidence for user-facing behavior.",
     "verification-gate": "Optional manual gate for DocsOnly, HarnessOnly, Runtime, Full, and BeforeCommit verification modes.",
+    "loop-policy": "Project scaffold guidance for L1-L4 diagnosis and safe L4 loop admission with state, budget, isolation, maker-checker review, and stop conditions.",
     "trace-eval-trends": "Summaries and index files for comparing trace eval runs over time.",
     "tool-failures": "Structured tool failure records for recovery and repeated-failure triage.",
     "skill-surface": "Read-only stocktake of active skill count, trigger quality, provider-specific residue, and large skills.",
@@ -95,6 +97,9 @@
     "verification_gate": [
       "scripts\\invoke-verification-gate.ps1",
       "docs\\verification-gate.md"
+    ],
+    "loop_policy": [
+      "templates\\project-harness\\loop.md"
     ],
     "trace_eval_trends": [
       "scripts\\summarize-trace-evals.ps1",

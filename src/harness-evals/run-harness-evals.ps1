@@ -109,6 +109,7 @@ Invoke-Eval -Name "project-scaffold" -Script {
         "docs\commands.md",
         "docs\testing.md",
         "docs\smoke.md",
+        "docs\loop.md",
         "docs\observability.md",
         "docs\quality.md",
         "docs\reliability.md",
@@ -177,6 +178,7 @@ Invoke-Eval -Name "project-scaffold" -Script {
     }
     $testing = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\testing.md") -Raw
     $smoke = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\smoke.md") -Raw
+    $loop = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\loop.md") -Raw
     if ($testing -notmatch 'L0' -or $testing -notmatch 'L5' -or $testing -notmatch 'lowest verification layer') {
         throw "testing scaffold does not describe the L0-L5 verification ladder"
     }
@@ -189,7 +191,12 @@ Invoke-Eval -Name "project-scaffold" -Script {
     if ($smoke -notmatch 'Reusable Smoke Scripts' -or $smoke -notmatch 'not\s+found' -or $smoke -notmatch 'known-valid fixtures' -or $smoke -notmatch 'bounded timeout') {
         throw "smoke scaffold does not describe reusable L4 smoke closure rules"
     }
-    "scaffold generated expected files and risk-tiered verification docs"
+    foreach ($required in @("Layer Diagnosis", "L4 Admission", "maker-checker", "budget", "Stop Conditions", "Comprehension Debt")) {
+        if ($loop -notmatch [regex]::Escape($required)) {
+            throw "loop scaffold is missing required policy text: $required"
+        }
+    }
+    "scaffold generated expected files plus risk-tiered verification and loop admission docs"
 }
 
 Invoke-Eval -Name "maturity-layer" -Script {

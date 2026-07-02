@@ -98,6 +98,9 @@ or more concrete routes:
   separation, or multi-role execution.
 - `test-loop`: reproduction, TDD, test-surface detection, verification gates,
   runtime evidence, smoke checks, or CI-style closure.
+- `loop`: recurring or event-driven automation, long-running goals,
+  cross-session state, budgeted workers, worktree isolation, maker-checker
+  separation, or unattended Codex runs.
 - `learning`: repeated miss, flaky tool, drift, missing eval, or durable lesson.
 - `sync`: runtime/source drift, publish readiness, forbidden-file scanning, or
   package verification.
@@ -133,6 +136,7 @@ If there is no evidence surface, the work is not complete yet.
 | "Testing loop", verification, CI-style checks | `detect-project-test-surface.ps1`, `invoke-codex-workflow.ps1 -Workflow verify`, `tester` | workflow artifact, verification gate, package/runtime checks |
 | TDD or bugfix with reproducible behavior | `invoke-codex-workflow.ps1 -Workflow tdd`, `tester`, `regression-miner` | failing/passing check or runtime-run/eval |
 | Browser/UI/runtime behavior | `e2e-runner`, Browser/Playwright, `new-runtime-run.ps1` | safe screenshots/log paths, runtime-run |
+| Loop automation, recurring work, cross-session goals, or parallel workers | `docs/loop.md`, `new-goal.ps1`, `new-agent-run.ps1`, `harness-orchestrator` only when complex | loop admission notes, state file, worker/review records, budget and stop conditions |
 | Build/type/lint failure | `build-error-resolver` | failing command then passing command |
 | Security/auth/secret/input change | `security-reviewer`, `docs/auth.md`, security docs/checks | redacted findings and checks |
 | Docs drift after code/harness changes | `doc-updater`, `check-project-docs.ps1` | docs diff and docs check |
@@ -158,6 +162,9 @@ Use these recipes before inventing new process:
   skill, rule, or script. Do not turn one-off feedback into broad machinery.
 - `checkpoint`: use session summaries, agent-run records, or harness-change
   records before long handoff or after substantial harness changes.
+- `loop`: classify the issue as L1 prompt, L2 context, L3 harness, or L4 loop;
+  only pilot L4 after the single-task L3 path is reliable, then define trigger,
+  state, budget, maker-checker review, verification gate, and stop conditions.
 - `orchestrate`: for 3+ separable subgoals, use planner -> executor/tester ->
   reviewer/security -> verifier with concise handoffs.
 
@@ -226,6 +233,39 @@ Use this checklist when the request touches verification or test closure:
 9. For repeated failures, add `new-tool-failure.ps1`,
    `new-learning-intake.ps1`, or a trace/tool eval so the miss becomes
    searchable later.
+
+### Four-Layer Diagnosis And Loop Intake
+
+Use this when an article, project feedback, or user request argues for "Loop
+Engineering", autonomous runs, scheduled agents, or more automation.
+
+1. Diagnose the failure at the lowest useful layer before adding machinery:
+   - L1 prompt: unclear task, role, output contract, or boundary.
+   - L2 context: missing, stale, excessive, or poorly ordered information.
+   - L3 harness: missing deterministic validation, permission boundary,
+     regression, smoke, AGENTS rule, or verification gate.
+   - L4 loop: the single-task path is reliable, but human-triggered serial work
+     is now the bottleneck.
+2. Do not skip L3. If a task cannot pass the focused single-run harness, a loop
+   will amplify the failure instead of solving it.
+3. A Codex-only L4 pilot must have automation trigger, durable state, scoped
+   worker task, separate checker/reviewer, explicit budget, stop conditions,
+   and the lowest sufficient L0-L5 verification gate.
+4. For parallel edits, require branch or git worktree isolation and record the
+   worker contract with `new-agent-run.ps1` when delegation must survive the
+   current session.
+5. Keep loops low-risk at first: CI triage, docs drift, focused test
+   completion, code-style cleanup, or harness health. Avoid unattended loops
+   around auth, external providers, paid calls, publishing, destructive data,
+   save/submit flows, or user-only browser state without explicit approval.
+6. Bound cost and runaway behavior with trigger frequency, max worker count,
+   max iterations, timeouts, and token/cost ceilings when available.
+7. Watch for comprehension debt: if loop output changes code that the human
+   owner cannot explain, pause automation, review the diff, update code maps or
+   architecture docs, and record the learning.
+8. Put reusable project policy in `docs/loop.md`. Do not create a new external
+   agent runtime, dashboard, or observability system unless the user explicitly
+   asks.
 
 ### Completion Gates For Workflow Core Work
 
@@ -358,6 +398,7 @@ For real repos or long-running work, the standard scaffold is:
     commands.md
     testing.md
     smoke.md
+    loop.md
     quality.md
     reliability.md
     security.md

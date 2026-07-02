@@ -70,6 +70,7 @@ foreach ($path in @(
     "src\scripts\harness-health.ps1",
     "src\scripts\audit-skill-surface.ps1",
     "src\templates\project-harness\harness.capabilities.json",
+    "src\templates\project-harness\loop.md",
     "src\harness-evals\run-harness-evals.ps1",
     "src\skills\project-harness-optimizer\SKILL.md"
 )) {

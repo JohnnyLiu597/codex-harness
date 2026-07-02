@@ -68,6 +68,7 @@ For real repositories or long-running work, the preferred project scaffold is:
     commands.md
     testing.md
     smoke.md
+    loop.md
     code-map.md
     features.json
     quality.md
@@ -192,6 +193,11 @@ the standard scaffold.
 - Keep runtime evidence policy in `docs/runtime.md`; use
   `scripts/new-runtime-run.ps1` to record real behavior evidence and link it to
   `docs/features.json` when a feature needs proof.
+- Keep loop admission policy in `docs/loop.md` before adding recurring,
+  event-driven, cross-session, or parallel-agent automation. Do not skip the
+  L3 harness layer: require reliable single-task verification, durable state,
+  budget limits, maker-checker review, and conservative stop conditions before
+  piloting L4 loops.
 - Use `scripts/invoke-verification-gate.ps1` for explicit completion gates such
   as `DocsOnly`, `HarnessOnly`, `Runtime`, `Full`, or `BeforeCommit`. Do not
   turn it into a default hook.

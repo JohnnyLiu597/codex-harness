@@ -54,6 +54,18 @@ The source release path is risk-tiered:
 - `Full`: install runtime, run global verification, and run deterministic
   harness evals.
 
+## Loop Layer
+
+Loop Engineering is treated as an L4 project capability, not a replacement for
+the L3 harness. Project scaffolds include `docs/loop.md` so recurring,
+event-driven, cross-session, or parallel Codex work must define trigger,
+durable state, budget limits, isolation, maker-checker review, verification
+gate, and stop conditions before it is piloted.
+
+The default posture is conservative: fix L1 prompt, L2 context, and L3 harness
+failures before adding loops. A loop should solve human-triggered serial
+bottlenecks only after the single-task path is already reliable.
+
 ## Runtime Payload
 
 The source payload currently includes:

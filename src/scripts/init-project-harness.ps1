@@ -78,18 +78,19 @@ Read in order when present:
 7. `docs/commands.md`
 8. `docs/testing.md`
 9. `docs/smoke.md`
-10. `docs/context.md`
-11. `docs/tool-surface.md`
-12. `docs/runtime.md`
-13. `docs/verification-gate.md`
-14. `docs/trace-evals.md`
-15. `docs/tool-failures.md`
-16. `docs/skill-surface.md`
-17. `docs/features.json`
-18. `docs/quality.md`
-19. `docs/reliability.md`
-20. `docs/security.md`
-21. `docs/tech-debt.md`
+10. `docs/loop.md`
+11. `docs/context.md`
+12. `docs/tool-surface.md`
+13. `docs/runtime.md`
+14. `docs/verification-gate.md`
+15. `docs/trace-evals.md`
+16. `docs/tool-failures.md`
+17. `docs/skill-surface.md`
+18. `docs/features.json`
+19. `docs/quality.md`
+20. `docs/reliability.md`
+21. `docs/security.md`
+22. `docs/tech-debt.md`
 
 ## Commands
 
@@ -108,6 +109,9 @@ See `docs/testing.md`.
   long-running work.
 - Use `scripts/new-runtime-run.ps1` to record real runtime evidence and link it
   to feature entries when behavior matters.
+- Use `docs/loop.md` before adding recurring, event-driven, cross-session, or
+  parallel-agent automation. L4 loops require reliable L3 single-task evidence,
+  durable state, budget limits, maker-checker review, and stop conditions.
 - Use `scripts/invoke-verification-gate.ps1` when a task needs an explicit
   DocsOnly, HarnessOnly, Runtime, Full, or BeforeCommit gate.
 - Use `scripts/summarize-trace-evals.ps1` to compare repeated trace eval runs.
@@ -554,7 +558,7 @@ $featuresJson = @"
       "priority": "high",
       "steps": [
         "Read AGENTS.md, mission.md, CONTEXT.md, MEMORY.md, and docs/project.md.",
-        "Verify docs/architecture.md, docs/code-map.md, docs/commands.md, docs/testing.md, and docs/smoke.md exist.",
+        "Verify docs/architecture.md, docs/code-map.md, docs/commands.md, docs/testing.md, docs/smoke.md, and docs/loop.md exist.",
         "Run the project harness verification command."
       ],
       "evidence": [],
@@ -884,6 +888,7 @@ $files = @(
     @{ Path = "docs\commands.md"; Content = $commands },
     @{ Path = "docs\testing.md"; Content = (Get-TemplateContent -RelativePath "testing.md" -Fallback $testingDoc) },
     @{ Path = "docs\smoke.md"; Content = (Get-TemplateContent -RelativePath "smoke.md" -Fallback $smoke) },
+    @{ Path = "docs\loop.md"; Content = (Get-TemplateContent -RelativePath "loop.md" -Fallback "# Loop Policy`r`n") },
     @{ Path = "docs\quality.md"; Content = (Get-TemplateContent -RelativePath "quality.md" -Fallback $quality) },
     @{ Path = "docs\reliability.md"; Content = (Get-TemplateContent -RelativePath "reliability.md" -Fallback $reliability) },
     @{ Path = "docs\security.md"; Content = (Get-TemplateContent -RelativePath "security.md" -Fallback $security) },

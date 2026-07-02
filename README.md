@@ -66,6 +66,8 @@ the package, and syncing source back to the runtime.
 - Workflow scripts for test-surface detection, verification, and harness
   checks.
 - Project scaffold templates for long-running repositories.
+- Loop admission guidance for recurring, event-driven, cross-session, or
+  parallel Codex work.
 - Deterministic harness evals and trace-eval plumbing.
 - Public-readiness rules that exclude secrets, logs, sessions, caches, browser
   state, plugin downloads, and generated runtime artifacts.

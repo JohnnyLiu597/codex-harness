@@ -45,6 +45,7 @@ $requiredFiles = @(
     "docs\commands.md",
     "docs\testing.md",
     "docs\smoke.md",
+    "docs\loop.md",
     "docs\features.json",
     "docs\quality.md",
     "docs\reliability.md",

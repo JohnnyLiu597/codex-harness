@@ -276,6 +276,12 @@ regression miner, and refactor cleaner. Hooks remain quiet and metadata-only.
 They may remind Codex to verify, sync runtime/source, or record learning, but
 they must not run heavy tests or store raw prompts.
 
+For recurring or event-driven work, treat Loop Engineering as an L4 capability
+that depends on a reliable L3 harness. Start with `docs/loop.md`: define the
+trigger, durable state, budget, worker isolation, maker-checker review,
+verification gate, and stop conditions before allowing unattended or parallel
+Codex runs.
+
 ## Core MCP Surface
 
 The global config keeps a small Codex-native core MCP surface:

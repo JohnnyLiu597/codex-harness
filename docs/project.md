@@ -41,6 +41,9 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-07-02: Added Loop Engineering intake guidance to the harness source so
+  project scaffolds now include `docs/loop.md` with L1-L4 diagnosis, L4
+  admission, budget, state, maker-checker, and stop-condition rules.
 - 2026-07-01: Added quiet-commentary guidance to the global harness so Codex
   avoids optional progress narration while preserving concise required status
   updates for meaningful state changes and long-running commands.

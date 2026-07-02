@@ -5,6 +5,7 @@
     "core": true,
     "runtime-evidence": false,
     "verification-gate": false,
+    "loop-policy": false,
     "trace-eval-trends": false,
     "tool-failures": false,
     "skill-surface": false,
@@ -40,6 +41,9 @@
       "scripts\\invoke-verification-gate.ps1",
       "docs\\verification-gate.md"
     ],
+    "loop_policy": [
+      "docs\\loop.md"
+    ],
     "trace_eval_trends": [
       "scripts\\summarize-trace-evals.ps1",
       "docs\\trace-evals.md"
@@ -57,6 +61,7 @@
     "Enable optional profiles only when the project actually needs them.",
     "Use runtime evidence records for user-facing behavior and feature verification.",
     "Use verification gate records when a task needs an explicit completion gate.",
+    "Use loop policy before recurring, event-driven, cross-session, or parallel-agent automation.",
     "Use trace summaries, tool failure records, and skill stocktakes when repeated evidence needs trend or surface analysis.",
     "Use coordination records when work crosses sessions, workers, or repeated failures.",
     "Keep project-specific MCPs, tools, credentials, and smoke commands documented in docs/."

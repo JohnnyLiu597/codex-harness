@@ -13,7 +13,7 @@ $required = @(
     "AGENTS.md", "mission.md", "CONTEXT.md", "MEMORY.md",
     "harness.capabilities.json",
     "docs\project.md", "docs\architecture.md", "docs\code-map.md", "docs\features.json",
-    "docs\commands.md", "docs\testing.md", "docs\smoke.md", "docs\quality.md",
+    "docs\commands.md", "docs\testing.md", "docs\smoke.md", "docs\loop.md", "docs\quality.md",
     "docs\reliability.md", "docs\security.md", "docs\tech-debt.md", "docs\observability.md",
     "docs\auth.md", "docs\profiles.md", "docs\retention.md",
     "docs\context.md", "docs\tool-surface.md", "docs\runtime.md", "docs\verification-gate.md",
