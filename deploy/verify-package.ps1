@@ -48,6 +48,7 @@ foreach ($path in @(
     "docs\security.md",
     "deploy\sync-from-runtime.ps1",
     "deploy\sync-to-runtime.ps1",
+    "deploy\test-sync-boundaries.ps1",
     "deploy\verify-release.ps1",
     "deploy\verify-package.ps1"
 )) {
@@ -58,6 +59,8 @@ foreach ($path in @(
     "src\AGENTS.md",
     "src\CODEX.md",
     "src\harness.capabilities.json",
+    "src\harness.components.json",
+    "src\hooks.json",
     "src\automations\harness\automation.toml.template",
     "src\agents\explorer.toml",
     "src\agents\reviewer.toml",
@@ -67,11 +70,24 @@ foreach ($path in @(
     "src\docs",
     "src\rules",
     "src\scripts\verify-global-harness.ps1",
+    "src\scripts\codex-hook.ps1",
+    "src\scripts\codex-hook-router.ps1",
+    "src\scripts\invoke-verification-envelope.ps1",
+    "src\scripts\audit-context-budget.ps1",
+    "src\scripts\audit-harness-components.ps1",
+    "src\scripts\new-job-state.ps1",
+    "src\scripts\new-ablation-run.ps1",
     "src\scripts\harness-health.ps1",
     "src\scripts\audit-skill-surface.ps1",
     "src\templates\project-harness\harness.capabilities.json",
+    "src\templates\project-harness\harness.components.json",
+    "src\templates\project-harness\context-budget.md",
+    "src\templates\project-harness\job-state.md",
+    "src\templates\project-harness\component-evolution.md",
     "src\templates\project-harness\loop.md",
     "src\harness-evals\run-harness-evals.ps1",
+    "src\harness-evals\test-verification-envelope.ps1",
+    "src\harness-evals\test-project-harness-optimizer.ps1",
     "src\harness-evals\test-article-source-resolver.ps1",
     "src\skills\article-source-resolver\SKILL.md",
     "src\skills\article-source-resolver\scripts\resolve-article-source.ps1",
@@ -90,12 +106,14 @@ if (Test-Path -LiteralPath $srcRoot) {
     $files = @(Get-ChildItem -LiteralPath $srcRoot -Recurse -Force -File -ErrorAction SilentlyContinue)
     $forbidden = @($files | Where-Object {
         $_.Name -in @("auth.json", "config.toml") -or
-        $_.Name -like "*.sqlite" -or
-        $_.Name -like "*.sqlite-shm" -or
-        $_.Name -like "*.sqlite-wal" -or
+        $_.Name -like "*.sqlite*" -or
         $_.Name -like "*.pyc" -or
         $_.Name -like "*.pyo" -or
-        $_.FullName -match '\\(plugins|cache|sessions|archived_sessions|log|hook-logs|browser|computer-use|process_manager|harness-health|harness-changes|skills\.archived|agents\.archived)\\' -or
+        $_.Name -eq ".codex-private" -or
+        $_.Name -match '(?i)\.bak(?:[-.].*)?$|\.backup(?:[-.].*)?$|~$' -or
+        $_.Name -eq ".sync-manifest.json" -or
+        $_.FullName -match '\\(plugins?|caches?|sessions?|archived_sessions|logs?|hook-logs|browser(?:[ ._-]?state)?|computer-use|process_manager|harness-health|harness-changes|skills\.archived|agents\.archived|backups?|backup-[^\\]+)\\' -or
+        $_.FullName -match '\\scripts\\archived\\' -or
         $_.FullName -match '\\__pycache__\\' -or
         $_.FullName -match '\\harness-evals\\runs\\' -or
         $_.FullName -match '\\harness-evals\\trace-evals\\(runs|summaries)\\'
@@ -110,7 +128,7 @@ if (Test-Path -LiteralPath $srcRoot) {
 $automationTemplatePath = Join-Path $srcRoot "automations\harness\automation.toml.template"
 if (Test-Path -LiteralPath $automationTemplatePath) {
     $template = Get-Content -LiteralPath $automationTemplatePath -Raw
-    $missingPlaceholders = @("__CODEX_HOME_TOML_CONTENT__", "__PROJECT_ROOT_TOML_STRING__", "__NOW_MS__") | Where-Object {
+    $missingPlaceholders = @("__CODEX_HOME_TOML_CONTENT__", "__PROJECT_ROOT_TOML_STRING__", "__MODEL_TOML_STRING__", "__NOW_MS__") | Where-Object {
         $template -notmatch [regex]::Escape($_)
     }
     if ($missingPlaceholders.Count -eq 0) {
@@ -119,20 +137,68 @@ if (Test-Path -LiteralPath $automationTemplatePath) {
         Add-Check -Name "automation-template-placeholders" -Status "failed" -Detail ($missingPlaceholders -join ", ")
     }
 
-    if ($template -match 'C:\\Users\\' -or $template -match 'experimental_bearer_token|bearer_token|api[_-]?key|auth\.json|token\s*=') {
-        Add-Check -Name "automation-template-public-readiness" -Status "failed" -Detail "template contains machine-local path or secret-like field"
+    if ($template -match 'C:\\Users\\' -or $template -match '(?i)Johnny' -or $template -match '(?i)(experimental_bearer_token|bearer_token|api[_-]?key|token)\s*=') {
+        Add-Check -Name "automation-template-public-readiness" -Status "failed" -Detail "template contains personal, machine-local, or secret-like content"
     } else {
         Add-Check -Name "automation-template-public-readiness" -Status "passed" -Detail "no machine-local path or secret-like field"
     }
 }
 
-$jsonPath = Join-Path $srcRoot "harness.capabilities.json"
-if (Test-Path -LiteralPath $jsonPath) {
+foreach ($jsonRelative in @("harness.capabilities.json", "harness.components.json", "hooks.json", "templates\project-harness\harness.capabilities.json", "templates\project-harness\harness.components.json", "templates\project-harness\features.json")) {
+    $jsonPath = Join-Path $srcRoot $jsonRelative
+    if (-not (Test-Path -LiteralPath $jsonPath -PathType Leaf)) { continue }
     try {
         Get-Content -LiteralPath $jsonPath -Raw | ConvertFrom-Json | Out-Null
-        Add-Check -Name "capability-json" -Status "passed" -Detail "valid JSON"
+        Add-Check -Name "json:$jsonRelative" -Status "passed" -Detail "valid JSON"
     } catch {
-        Add-Check -Name "capability-json" -Status "failed" -Detail $_.Exception.Message
+        Add-Check -Name "json:$jsonRelative" -Status "failed" -Detail $_.Exception.Message
+    }
+}
+
+$hooksPath = Join-Path $srcRoot "hooks.json"
+if (Test-Path -LiteralPath $hooksPath -PathType Leaf) {
+    $hooksRaw = Get-Content -LiteralPath $hooksPath -Raw -Encoding UTF8
+    $hooks = $hooksRaw | ConvertFrom-Json
+    $requiredHookEvents = @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")
+    $missingHookEvents = @($requiredHookEvents | Where-Object { $hooks.hooks.PSObject.Properties.Name -notcontains $_ })
+    if ($missingHookEvents.Count -eq 0) {
+        Add-Check -Name "hooks-lifecycle-surface" -Status "passed" -Detail "required lifecycle events present"
+    } else {
+        Add-Check -Name "hooks-lifecycle-surface" -Status "failed" -Detail ("missing: " + ($missingHookEvents -join ", "))
+    }
+    if ($hooksRaw -match 'C:\\Users\\' -or $hooksRaw -match 'auth\.json|config\.toml|bearer_token|api[_-]?key') {
+        Add-Check -Name "hooks-public-readiness" -Status "failed" -Detail "hooks contain a machine-local path or secret-adjacent field"
+    } else {
+        Add-Check -Name "hooks-public-readiness" -Status "passed" -Detail "portable commands and no secret-adjacent fields"
+    }
+}
+
+$agentRoot = Join-Path $srcRoot "agents"
+if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+    $agentFiles = @(Get-ChildItem -LiteralPath $agentRoot -File -Filter "*.toml" | Sort-Object Name)
+    $agentNames = New-Object System.Collections.Generic.HashSet[string]
+    $agentIssues = New-Object System.Collections.Generic.List[string]
+    foreach ($agentFile in $agentFiles) {
+        $agentConfig = Get-Content -LiteralPath $agentFile.FullName -Raw -Encoding UTF8
+        $nameMatch = [regex]::Match($agentConfig, '(?m)^\s*name\s*=\s*"([^"]+)"\s*$')
+        $descriptionMatch = [regex]::Match($agentConfig, '(?m)^\s*description\s*=\s*"([^"]+)"\s*$')
+        if (-not $nameMatch.Success -or -not $descriptionMatch.Success -or $agentConfig -notmatch '(?m)^\s*developer_instructions\s*=') {
+            $agentIssues.Add("$($agentFile.Name): missing name, description, or developer_instructions") | Out-Null
+            continue
+        }
+        $agentName = $nameMatch.Groups[1].Value
+        $expectedName = [System.IO.Path]::GetFileNameWithoutExtension($agentFile.Name).Replace("-", "_")
+        if ($agentName -ne $expectedName) {
+            $agentIssues.Add("$($agentFile.Name): name '$agentName' should be '$expectedName'") | Out-Null
+        }
+        if (-not $agentNames.Add($agentName)) {
+            $agentIssues.Add("$($agentFile.Name): duplicate name '$agentName'") | Out-Null
+        }
+    }
+    if ($agentFiles.Count -gt 0 -and $agentIssues.Count -eq 0) {
+        Add-Check -Name "custom-agent-schema" -Status "passed" -Detail "$($agentFiles.Count) standalone agent files are portable"
+    } else {
+        Add-Check -Name "custom-agent-schema" -Status "failed" -Detail (($agentIssues.ToArray()) -join "; ")
     }
 }
 
@@ -176,10 +242,33 @@ $skillRoot = Join-Path $srcRoot "skills"
 if (Test-Path -LiteralPath $skillRoot) {
     $skillDirs = @(Get-ChildItem -LiteralPath $skillRoot -Directory -Force)
     $missingSkillMd = @($skillDirs | Where-Object { -not (Test-Path -LiteralPath (Join-Path $_.FullName "SKILL.md")) })
-    if ($missingSkillMd.Count -eq 0) {
-        Add-Check -Name "skill-frontmatter-surface" -Status "passed" -Detail "$($skillDirs.Count) skill directories have SKILL.md"
+    $invalidSkillMd = New-Object System.Collections.Generic.List[string]
+    foreach ($skillDir in $skillDirs) {
+        $skillPath = Join-Path $skillDir.FullName "SKILL.md"
+        if (-not (Test-Path -LiteralPath $skillPath -PathType Leaf)) { continue }
+        $bytes = [System.IO.File]::ReadAllBytes($skillPath)
+        if ($bytes.Length -lt 3 -or $bytes[0] -ne 0x2D -or $bytes[1] -ne 0x2D -or $bytes[2] -ne 0x2D) {
+            $invalidSkillMd.Add("$($skillDir.Name): SKILL.md must start with --- in UTF-8 without BOM") | Out-Null
+            continue
+        }
+        $skillText = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
+        $frontmatter = [regex]::Match($skillText, '\A---\r?\n(?<body>[\s\S]*?)\r?\n---(?:\r?\n|$)')
+        if (-not $frontmatter.Success) {
+            $invalidSkillMd.Add("$($skillDir.Name): malformed YAML frontmatter") | Out-Null
+            continue
+        }
+        $metadata = $frontmatter.Groups["body"].Value
+        $name = [regex]::Match($metadata, '(?m)^name:\s*["'']?(?<value>[^\r\n"'']+)')
+        $description = [regex]::Match($metadata, '(?m)^description:\s*(?<value>\S.*)$')
+        if (-not $name.Success -or $name.Groups["value"].Value.Trim() -ne $skillDir.Name -or -not $description.Success) {
+            $invalidSkillMd.Add("$($skillDir.Name): name/description metadata is missing or inconsistent") | Out-Null
+        }
+    }
+    if ($missingSkillMd.Count -eq 0 -and $invalidSkillMd.Count -eq 0) {
+        Add-Check -Name "skill-frontmatter-surface" -Status "passed" -Detail "$($skillDirs.Count) skill directories have loadable SKILL.md frontmatter"
     } else {
-        Add-Check -Name "skill-frontmatter-surface" -Status "failed" -Detail (($missingSkillMd | Select-Object -ExpandProperty Name) -join ", ")
+        $details = @($missingSkillMd | ForEach-Object { "$($_.Name): missing SKILL.md" }) + @($invalidSkillMd)
+        Add-Check -Name "skill-frontmatter-surface" -Status "failed" -Detail ($details -join "; ")
     }
 }
 

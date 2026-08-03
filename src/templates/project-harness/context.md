@@ -11,3 +11,7 @@ context compaction, multiple workers, or major decisions. Use:
 
 Move stable facts into `CONTEXT.md`, `MEMORY.md`, or the relevant `docs/*.md`.
 Do not store raw prompts, secrets, cookies, tokens, auth JSON, or full logs.
+
+Use `scripts/audit-context-budget.ps1` before growing root instructions or
+large skills. Use `scripts/new-job-state.ps1` to mirror resumable native work;
+the record is not a scheduler or agent runtime.

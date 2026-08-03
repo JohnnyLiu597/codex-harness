@@ -1,7 +1,8 @@
 # Context Handoff
 
-This harness keeps long Codex work recoverable with small, explicit handoff
-records instead of relying on chat history alone.
+This harness keeps long Codex work recoverable with bounded context, explicit
+handoff records, and native job-state adapters instead of relying on chat
+history alone.
 
 ## When To Create A Session Summary
 
@@ -41,4 +42,10 @@ when they should outlive a single run.
 - `MEMORY.md`: short stable fact index.
 - `artifacts/session-summaries/`: resumable run state.
 - `artifacts/harness-changes/`: harness implementation changes.
+- `artifacts/job-states/`: resumable state for native Goal, subagent, worktree,
+  scheduled, event-driven, or manual work.
 - `evals/` and trace evals: repeated model or tool failures.
+
+Run `scripts/audit-context-budget.ps1` before expanding root instructions,
+durable context files, or large skills. See `docs/context-budget.md` for the
+project policy.

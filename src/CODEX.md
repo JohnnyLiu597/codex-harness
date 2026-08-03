@@ -63,6 +63,7 @@ mission.md
 CONTEXT.md
 MEMORY.md
 harness.capabilities.json
+harness.components.json
 docs/project.md
 docs/architecture.md
 docs/commands.md
@@ -85,6 +86,9 @@ docs/verification-gate.md
 docs/trace-evals.md
 docs/tool-failures.md
 docs/skill-surface.md
+docs/context-budget.md
+docs/job-state.md
+docs/component-evolution.md
 evals/prompts.csv
 evals/tool-evals/
 artifacts/goals/*.md
@@ -93,11 +97,16 @@ artifacts/harness-changes/*.md
 artifacts/reviews/*.md
 artifacts/runtime-runs/*.md
 artifacts/verification-gates/*.md
+artifacts/verification-envelopes/*.json
 artifacts/tool-failures/*.md
 artifacts/trace-eval-summaries/*.md
 artifacts/skill-surface/*.md
+artifacts/context-budget/*.json
+artifacts/component-audits/*.json
+artifacts/ablation-runs/*.json
 artifacts/session-summaries/*.md
 artifacts/agent-runs/*.md
+artifacts/job-states/*.json
 artifacts/learning-inbox/*.md
 scripts/verify-harness.ps1
 scripts/check-all.ps1
@@ -108,12 +117,17 @@ scripts/new-harness-change.ps1
 scripts/new-trace-eval.ps1
 scripts/new-session-summary.ps1
 scripts/new-agent-run.ps1
+scripts/new-job-state.ps1
 scripts/new-learning-intake.ps1
 scripts/new-runtime-run.ps1
 scripts/invoke-verification-gate.ps1
+scripts/invoke-verification-envelope.ps1
 scripts/summarize-trace-evals.ps1
 scripts/new-tool-failure.ps1
 scripts/audit-skill-surface.ps1
+scripts/audit-context-budget.ps1
+scripts/audit-harness-components.ps1
+scripts/new-ablation-run.ps1
 ```
 
 `AGENTS.md` routes Codex behavior for the repo. `mission.md` is stable
@@ -155,11 +169,20 @@ When a task needs an explicit completion gate, use
 `Runtime`, `Full`, or `BeforeCommit`. This is intentionally manual and should
 not become a default stop hook.
 
+When a high-value check needs tamper evidence, use
+`scripts/invoke-verification-envelope.ps1`. It hashes the command, source,
+tests, grader, output, environment, protected paths, and evidence without
+persisting raw command output.
+
 Use `scripts/summarize-trace-evals.ps1` after trace eval runs to compare recent
 case status, hit rates, and repeated failures. Use
 `scripts/new-tool-failure.ps1` for tool failures that affect the task or repeat.
 Use `scripts/audit-skill-surface.ps1` for read-only skill stocktakes; archive
 or restore skills only as a separate explicit action.
+Use `scripts/audit-context-budget.ps1` before expanding root instructions or
+long skills. Use `harness.components.json` and
+`scripts/audit-harness-components.ps1` before adding overlapping harness
+parts; use `scripts/new-ablation-run.ps1` only for bounded comparisons.
 
 `harness.capabilities.json` is the machine-readable project harness manifest.
 It records which optional profiles are enabled and which verification commands
@@ -178,6 +201,10 @@ bounded task contract, outputs, files, checks, and residual risks. Lessons that
 are not ready for a trace eval should first go through
 `scripts/new-learning-intake.ps1`, then be triaged into docs, eval, skill, rule,
 or script changes.
+
+Use `scripts/new-job-state.ps1` to mirror native Goal, subagent, worktree,
+scheduled, event-driven, or manual work into resumable state. This adapter
+records observed work and never acts as a scheduler or separate agent runtime.
 
 Codex `/goal` is enabled as an experimental active-session pointer. It should
 mirror the current durable goal, not replace `mission.md`, `docs/features.json`,
@@ -246,9 +273,10 @@ Results live under `~/.codex/harness-health/`,
 `~/.codex/harness-evals/runs/`, and
 `~/.codex/harness-evals/trace-evals/runs/`.
 
-The Stop hook is intentionally silent and local-only. It writes concise summary
-logs under `~/.codex/hook-logs/` and must not store raw prompt or full hook
-payload content.
+Lifecycle hooks are intentionally silent, bounded, local-only, and
+metadata-only. They write concise summary logs under `~/.codex/hook-logs/` and
+must not store raw prompts, commands, patches, tool output, transcripts, or
+payload values.
 
 ## Codex Workflow Core
 
@@ -258,11 +286,19 @@ depending on external agent runtimes.
 Core files:
 
 - `~/.codex/docs/codex-workflow-core.md`
+- `~/.codex/hooks.json`
+- `~/.codex/scripts/codex-hook.ps1`
 - `~/.codex/scripts/codex-hook-router.ps1`
 - `~/.codex/scripts/detect-project-test-surface.ps1`
 - `~/.codex/scripts/invoke-codex-workflow.ps1`
+- `~/.codex/scripts/invoke-verification-envelope.ps1`
 - `~/.codex/scripts/test-codex-workflow-core.ps1`
 - `~/.codex/agents/*.toml`
+
+Files under `~/.codex/agents` are standalone custom-agent definitions. Each
+contains `name`, `description`, and `developer_instructions`, and normally
+inherits the active Codex model. Machine-local `config.toml` role declarations
+are not required for the maintained agent pack.
 
 Use the workflow entry point for command-style flows:
 

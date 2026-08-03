@@ -47,7 +47,13 @@
       "loop-policy",
       "session-summaries",
       "agent-run-records",
+      "native-job-state",
       "learning-intake",
+      "context-budget-audits",
+      "verification-envelopes",
+      "maker-checker-reviews",
+      "component-registry",
+      "bounded-ablation",
       "web-source-resolution",
       "article-source-resolution"
     ]
@@ -60,6 +66,10 @@
     "trace-eval-trends": "Summaries and index files for comparing trace eval runs over time.",
     "tool-failures": "Structured tool failure records for recovery and repeated-failure triage.",
     "skill-surface": "Read-only stocktake of active skill count, trigger quality, provider-specific residue, and large skills.",
+    "context-budget": "Read-only byte and line budgets for project anchors, layered AGENTS files, and active skills.",
+    "job-state": "Durable adapter records for native Goal, subagent, worktree, scheduled, event-driven, and manual work.",
+    "verification-envelope": "Tamper-evident command evidence with source, test, grader, output, environment, and protected-path hashes.",
+    "component-evolution": "Registry, review cadence, compensation hypotheses, bounded ablation, and retirement criteria for harness components.",
     "codex-workflow-core": "Codex-only workflow-control pack: hook router, agent pack, workflow entry, and self-tests.",
     "hook-router": "Metadata-only local hook event router with privacy-preserving Stop hook records.",
     "scheduled-maintenance": "Weekly Codex cron automation that runs harness health, bounded repairs, and verification.",
@@ -92,7 +102,16 @@
     "coordination": [
       "scripts\\new-session-summary.ps1",
       "scripts\\new-agent-run.ps1",
+      "scripts\\new-job-state.ps1",
       "scripts\\new-learning-intake.ps1"
+    ],
+    "context_budget": [
+      "scripts\\audit-context-budget.ps1",
+      "docs\\context-budget.md"
+    ],
+    "job_state": [
+      "scripts\\new-job-state.ps1",
+      "docs\\job-state.md"
     ],
     "runtime_evidence": [
       "scripts\\new-runtime-run.ps1",
@@ -100,6 +119,11 @@
     ],
     "verification_gate": [
       "scripts\\invoke-verification-gate.ps1",
+      "docs\\verification-gate.md"
+    ],
+    "verification_envelope": [
+      "scripts\\invoke-verification-envelope.ps1",
+      "harness-evals\\test-verification-envelope.ps1",
       "docs\\verification-gate.md"
     ],
     "loop_policy": [
@@ -116,6 +140,12 @@
     "skill_surface": [
       "scripts\\audit-skill-surface.ps1",
       "docs\\skill-surface.md"
+    ],
+    "component_evolution": [
+      "harness.components.json",
+      "scripts\\audit-harness-components.ps1",
+      "scripts\\new-ablation-run.ps1",
+      "docs\\component-evolution.md"
     ],
     "web_source_resolution": [
       "AGENTS.md",
@@ -137,10 +167,13 @@
       "harness-evals\\test-article-source-resolver.ps1"
     ],
     "codex_workflow_core": [
+      "hooks.json",
       "docs\\codex-workflow-core.md",
+      "scripts\\codex-hook.ps1",
       "scripts\\codex-hook-router.ps1",
       "scripts\\detect-project-test-surface.ps1",
       "scripts\\invoke-codex-workflow.ps1",
+      "scripts\\invoke-verification-envelope.ps1",
       "scripts\\test-codex-workflow-core.ps1",
       "agents\\planner.toml",
       "agents\\tester.toml",
@@ -157,7 +190,7 @@
     {
       "id": "provider-token-location",
       "status": "accepted-risk",
-      "summary": "config.toml currently contains experimental_bearer_token for the custom model provider; migrate only after a supported replacement path is verified."
+      "summary": "A machine-local provider credential field remains in config.toml; the publishable source excludes config.toml and only reports this boundary without copying values."
     }
   ]
 }

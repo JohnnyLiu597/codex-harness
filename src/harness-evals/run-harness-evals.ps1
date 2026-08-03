@@ -57,43 +57,10 @@ Invoke-Eval -Name "global-config" -Script {
 }
 
 Invoke-Eval -Name "optimizer-workflow-routing" -Script {
-    $skillPath = Join-Path $codexHomePath "skills\project-harness-optimizer\SKILL.md"
-    $skill = Get-Content -LiteralPath $skillPath -Raw
-    foreach ($required in @(
-        "Workflow Core Routing Table",
-        "Route Selection Discipline",
-        "Closed-Loop Evidence Contract",
-        "Workflow Recipes",
-        "Hook Upgrade Checklist",
-        "Agent Upgrade Checklist",
-        "Testing Loop Upgrade Checklist",
-        "Completion Gates For Workflow Core Work",
-        "Workflow Core Mode",
-        "codex-hook-router.ps1",
-        "detect-project-test-surface.ps1",
-        "invoke-codex-workflow.ps1",
-        "test-codex-workflow-core.ps1",
-        "reproduce -> fix -> rerun",
-        "new-tool-failure.ps1",
-        "new-agent-run.ps1",
-        "verify-release.ps1",
-        "lowest sufficient release gate",
-        "idempotent setup/cleanup",
-        "allowed `"not found`" or HTTP 404",
-        "bounded timeouts",
-        "partial evidence on timeout",
-        "harness-auditor",
-        "regression-miner",
-        "web-source-resolver",
-        "article-source-resolver",
-        "source-intake",
-        "A message containing only one or more public HTTP(S) URLs defaults to"
-    )) {
-        if ($skill -notmatch [regex]::Escape($required)) {
-            throw "project-harness-optimizer is missing required workflow routing text: $required"
-        }
-    }
-    "project-harness-optimizer actively routes workflow core hooks, agents, workflows, tests, and completion gates"
+    $raw = & (Join-Path $codexHomePath "harness-evals\test-project-harness-optimizer.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "project-harness-optimizer self-test failed" }
+    "project-harness-optimizer routes lanes, lifecycle, context, agents, state, verification, learning, evolution, web intake, and release closure"
 }
 
 Invoke-Eval -Name "web-source-resolver" -Script {
@@ -164,6 +131,7 @@ Invoke-Eval -Name "project-scaffold" -Script {
         "CONTEXT.md",
         "MEMORY.md",
         "harness.capabilities.json",
+        "harness.components.json",
         "docs\project.md",
         "docs\architecture.md",
         "docs\code-map.md",
@@ -187,6 +155,9 @@ Invoke-Eval -Name "project-scaffold" -Script {
         "docs\trace-evals.md",
         "docs\tool-failures.md",
         "docs\skill-surface.md",
+        "docs\context-budget.md",
+        "docs\job-state.md",
+        "docs\component-evolution.md",
         "evals\README.md",
         "evals\prompts.csv",
         "evals\tool-evals\README.md",
@@ -210,12 +181,17 @@ Invoke-Eval -Name "project-scaffold" -Script {
         "scripts\new-trace-eval.ps1",
         "scripts\new-session-summary.ps1",
         "scripts\new-agent-run.ps1",
+        "scripts\new-job-state.ps1",
         "scripts\new-learning-intake.ps1",
         "scripts\new-runtime-run.ps1",
         "scripts\invoke-verification-gate.ps1",
+        "scripts\invoke-verification-envelope.ps1",
         "scripts\summarize-trace-evals.ps1",
         "scripts\new-tool-failure.ps1",
         "scripts\audit-skill-surface.ps1",
+        "scripts\audit-context-budget.ps1",
+        "scripts\audit-harness-components.ps1",
+        "scripts\new-ablation-run.ps1",
         "scripts\new-review.ps1",
         "scripts\new-run.ps1",
         "scripts\new-smoke-run.ps1",
@@ -227,6 +203,11 @@ Invoke-Eval -Name "project-scaffold" -Script {
         "scripts\update-project-state.ps1",
         "scripts\verify-harness.ps1",
         ".codex\rules\default.rules",
+        "artifacts\verification-envelopes",
+        "artifacts\context-budget",
+        "artifacts\component-audits",
+        "artifacts\ablation-runs",
+        "artifacts\job-states",
         "artifacts\plan_eval.md"
     )
     $missing = @()
@@ -273,6 +254,7 @@ Invoke-Eval -Name "maturity-layer" -Script {
     & (Join-Path $tmpRoot "scripts\audit-project-harness.ps1") | Out-Null
     & (Join-Path $tmpRoot "scripts\new-session-summary.ps1") -Name "eval summary" -Objective "Verify session handoff records." -Completed @("created") -NextActions @("resume") -SetCurrent | Out-Null
     & (Join-Path $tmpRoot "scripts\new-agent-run.ps1") -Name "eval worker" -Role "worker" -Task "Verify worker output contract." -Outputs @("record") -Checks @("json") | Out-Null
+    & (Join-Path $tmpRoot "scripts\new-job-state.ps1") -Name "eval job" -WorkType manual -State running -Summary "Verify resumable native job records." | Out-Null
     & (Join-Path $tmpRoot "scripts\new-learning-intake.ps1") -Name "eval learning" -Summary "Verify learning intake." -ProposedDestination "eval" -Evidence @("record") | Out-Null
     & (Join-Path $tmpRoot "scripts\new-runtime-run.ps1") -Name "eval runtime" -Status "completed" -Summary "Verify runtime evidence records." -Checks @("runtime") -Evidence @("record") | Out-Null
     & (Join-Path $tmpRoot "scripts\invoke-verification-gate.ps1") -Mode DocsOnly -ContinueOnError | Out-Null
@@ -280,8 +262,71 @@ Invoke-Eval -Name "maturity-layer" -Script {
     & (Join-Path $tmpRoot "scripts\summarize-trace-evals.ps1") -Last 5 | Out-Null
     & (Join-Path $tmpRoot "scripts\new-tool-failure.ps1") -Tool "eval-tool" -FailureType "other" -Summary "Verify tool failure records." -Recovery "recorded" | Out-Null
     & (Join-Path $tmpRoot "scripts\audit-skill-surface.ps1") -ProjectRoot $tmpRoot | Out-Null
+    & (Join-Path $tmpRoot "scripts\audit-context-budget.ps1") -ProjectRoot $tmpRoot -CodexHome $codexHomePath | Out-Null
+    & (Join-Path $tmpRoot "scripts\audit-harness-components.ps1") -ProjectRoot $tmpRoot | Out-Null
+    & (Join-Path $tmpRoot "scripts\new-ablation-run.ps1") -Name "eval ablation" -ComponentId "project-operating-docs" -Hypothesis "A bounded comparison record preserves evidence without changing component state." -MaxCases 1 -MaxMinutes 1 | Out-Null
+    & (Join-Path $tmpRoot "scripts\invoke-verification-envelope.ps1") -ProjectRoot $tmpRoot -Name "eval envelope" -Command "Get-Content -LiteralPath '.\mission.md' | Out-Null" -SourcePaths @("mission.md") -TestPaths @("scripts\verify-harness.ps1") -ProtectedPaths @("mission.md") -TimeoutSeconds 10 | Out-Null
     & (Join-Path $tmpRoot "scripts\check-all.ps1") -TraceEvals -Smoke | Out-Null
     "maturity layer scripts ran on generated scaffold"
+}
+
+Invoke-Eval -Name "job-state-adapter" -Script {
+    $tmpRoot = Join-Path $env:TEMP ("codex-job-state-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
+    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "JobStateEval" | Out-Null
+    $script = Join-Path $tmpRoot "scripts\new-job-state.ps1"
+    $count = 0
+    foreach ($workType in @("goal", "subagent", "worktree", "scheduled", "event-driven", "manual")) {
+        foreach ($state in @("queued", "running", "checking", "waiting_approval", "passed", "blocked", "stopped")) {
+            $args = @{
+                Name = "$workType $state"
+                WorkType = $workType
+                State = $state
+                JobId = "$workType-$state"
+                Summary = "mapping eval"
+            }
+            if ($state -eq "passed") { $args.Artifacts = @("verification:evaluated") }
+            if ($state -in @("blocked", "stopped")) { $args.StopReason = "bounded eval stop" }
+            $raw = & $script @args
+            $json = $raw | ConvertFrom-Json
+            if ($json.status -eq "failed" -or $json.state -ne $state) {
+                throw "job-state mapping failed for $workType/$state"
+            }
+            $count++
+        }
+    }
+
+    & $script -Name "resume history" -WorkType manual -State queued -JobId "resume-history" -Summary "queued" | Out-Null
+    & $script -Name "resume history" -WorkType manual -State running -JobId "resume-history" -Attempt 2 -Summary "running" | Out-Null
+    $historyPath = Join-Path $tmpRoot "artifacts\job-states\resume-history\history.jsonl"
+    if (@(Get-Content -LiteralPath $historyPath).Count -ne 2) {
+        throw "job-state history did not append both attempts"
+    }
+    "new-job-state mapped $count native work/state combinations and preserved append-only history"
+}
+
+Invoke-Eval -Name "context-and-component-evolution" -Script {
+    $tmpRoot = Join-Path $env:TEMP ("codex-component-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
+    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "ComponentEval" | Out-Null
+
+    $context = (& (Join-Path $tmpRoot "scripts\audit-context-budget.ps1") -ProjectRoot $tmpRoot -CodexHome $codexHomePath) | ConvertFrom-Json
+    if (-not $context.read_only -or $context.status -eq "failed") {
+        throw "context budget audit did not remain read-only"
+    }
+
+    $components = (& (Join-Path $tmpRoot "scripts\audit-harness-components.ps1") -ProjectRoot $tmpRoot) | ConvertFrom-Json
+    if (-not $components.read_only -or $components.status -ne "passed" -or $components.component_count -lt 8) {
+        throw "component registry audit did not pass with all component types"
+    }
+
+    $ablationRaw = & (Join-Path $tmpRoot "scripts\new-ablation-run.ps1") -Name "bounded eval" -ComponentId "project-operating-docs" -Hypothesis "A record can compare a component without mutating its state." -MaxCases 1 -MaxMinutes 1
+    $ablation = $ablationRaw | ConvertFrom-Json
+    $record = Get-Content -LiteralPath $ablation.artifacts[0] -Raw | ConvertFrom-Json
+    if ($record.automatic_component_changes -or $record.component_state_changed) {
+        throw "ablation record changed component state"
+    }
+    "context budget, component registry, and bounded ablation controls passed"
 }
 
 Invoke-Eval -Name "trace-summary" -Script {
@@ -393,16 +438,28 @@ Invoke-Eval -Name "coordination-records" -Script {
     }
     if (-not (Test-Path -LiteralPath $session.current)) { throw "session current pointer missing" }
 
-    $agentRaw = & (Join-Path $tmpRoot "scripts\new-agent-run.ps1") -Name "eval agent" -Role "worker" -Task "Return bounded evidence." -Inputs @("task") -Outputs @("summary") -Risks @("none")
+    $inputMarker = "agent-input-must-not-persist-7f64015e"
+    $agentRaw = & (Join-Path $tmpRoot "scripts\new-agent-run.ps1") -Name "eval agent" -Role "worker" -Task "Return bounded evidence." -Inputs @($inputMarker) -Outputs @("summary") -Risks @("none") -Ownership @("docs") -CheckerIdentity "independent-checker" -TimeBudgetMinutes 5
     $agent = $agentRaw | ConvertFrom-Json
     foreach ($artifact in $agent.artifacts) {
         if (-not (Test-Path -LiteralPath $artifact)) { throw "agent artifact missing: $artifact" }
+    }
+    $agentArtifacts = ($agent.artifacts | ForEach-Object { Get-Content -LiteralPath $_ -Raw }) -join "`n"
+    if ($agentArtifacts -match [regex]::Escape($inputMarker)) {
+        throw "agent run persisted raw inputs without -PersistInputs"
+    }
+    $agentRecord = Get-Content -LiteralPath $agent.artifacts[0] -Raw | ConvertFrom-Json
+    if ($agentRecord.inputs_persisted -or $agentRecord.input_count -ne 1 -or @($agentRecord.input_hashes).Count -ne 1) {
+        throw "agent run did not preserve input-count and hash evidence"
     }
 
     $learningRaw = & (Join-Path $tmpRoot "scripts\new-learning-intake.ps1") -Name "eval intake" -Source "eval" -Summary "Repeated miss should become docs or eval." -FailureMode "missed handoff" -Frequency "repeated" -ProposedDestination "trace-eval" -Evidence @("case")
     $learning = $learningRaw | ConvertFrom-Json
     foreach ($artifact in $learning.artifacts) {
         if (-not (Test-Path -LiteralPath $artifact)) { throw "learning artifact missing: $artifact" }
+    }
+    if ($learning.route -ne "eval" -or $learning.automatic_destination_changes) {
+        throw "learning intake did not resolve the route without automatic changes"
     }
 
     "coordination record scripts created handoff, worker, and learning artifacts"
@@ -446,12 +503,16 @@ Invoke-Eval -Name "review-record" -Script {
     New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "ReviewEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-review.ps1"
-    & $script -Name "eval-review" -Status "completed" -Summary "eval" -Checks @("check") -Evidence @("evidence") | Out-Null
+    & $script -Name "eval-review" -Status "completed" -Summary "eval" -Checks @("check") -Evidence @("evidence") -Maker "maker" -Checker "checker" -VerifiedCommit "0123456789abcdef" | Out-Null
     $run = Get-ChildItem -LiteralPath (Join-Path $tmpRoot "artifacts\reviews") -Directory | Select-Object -First 1
     if (-not $run -or -not (Test-Path -LiteralPath (Join-Path $run.FullName "review.json"))) {
         throw "review record was not created"
     }
-    "new-review created review evidence"
+    $review = Get-Content -LiteralPath (Join-Path $run.FullName "review.json") -Raw | ConvertFrom-Json
+    if (-not $review.maker_checker_separated -or $review.maker -eq $review.checker) {
+        throw "review record did not preserve maker/checker separation"
+    }
+    "new-review created independent maker/checker evidence"
 }
 
 Invoke-Eval -Name "goal-record" -Script {
@@ -516,21 +577,18 @@ Invoke-Eval -Name "docs-sync" -Script {
     "check-project-docs produced docs sync report"
 }
 
-Invoke-Eval -Name "hook-privacy" -Script {
-    $hookScript = Join-Path $codexHomePath "scripts\codex-stop-log.ps1"
-    $source = Get-Content -LiteralPath $hookScript -Raw
-    if ($source -match '(?m)^\s*raw\s*=') {
-        throw "Stop hook still records raw payload"
-    }
-    if ($source -match '(?m)^\s*payload\s*=') {
-        throw "Stop hook still stores full parsed payload"
-    }
-    '{"summary":"harness eval stop hook"}' | powershell.exe -NoProfile -ExecutionPolicy Bypass -File $hookScript | Out-Null
-    $latest = Get-Content -LiteralPath (Join-Path $codexHomePath "hook-logs\latest-stop.txt") -Raw
-    if ($latest -notmatch "harness eval stop hook") {
-        throw "Stop hook did not write latest-stop.txt"
-    }
-    "Stop hook writes summary without raw payload fields"
+Invoke-Eval -Name "workflow-core-hooks" -Script {
+    $raw = & (Join-Path $codexHomePath "scripts\test-codex-workflow-core.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "workflow core hook self-test failed" }
+    "lifecycle hooks passed safety, privacy, valid-output, and bounded verification-loop checks"
+}
+
+Invoke-Eval -Name "verification-envelope" -Script {
+    $raw = & (Join-Path $codexHomePath "harness-evals\test-verification-envelope.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "verification envelope self-test failed" }
+    "verification envelope passed source/test/grader/environment hash, tamper, and timeout checks"
 }
 
 Invoke-Eval -Name "trace-eval-dryrun" -Script {
@@ -545,6 +603,46 @@ Invoke-Eval -Name "trace-eval-dryrun" -Script {
         }
     }
     "run-trace-evals.ps1 produced dry-run trace artifacts"
+}
+
+Invoke-Eval -Name "trace-artifact-privacy" -Script {
+    $tmpRoot = Join-Path $env:TEMP ("codex-trace-privacy-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
+    $runsRoot = Join-Path $tmpRoot "runs"
+    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $promptMarker = "raw-prompt-marker-4ebfbc26"
+    $expectedMarker = "raw-expected-marker-b29c1b0f"
+    $promptFile = Join-Path $tmpRoot "prompts.csv"
+    [pscustomobject]@{
+        id = "privacy-case"
+        enabled = "true"
+        lane = "privacy"
+        prompt = $promptMarker
+        expected = $expectedMarker
+        must_include = "verification"
+        must_not_include = "credential"
+        min_score = "70"
+    } | Export-Csv -LiteralPath $promptFile -NoTypeInformation -Encoding UTF8
+
+    $raw = & (Join-Path $codexHomePath "harness-evals\run-trace-evals.ps1") -CodexHome $codexHomePath -PromptFile $promptFile -RunsRoot $runsRoot -DryRun
+    $json = $raw | ConvertFrom-Json
+    $persisted = (Get-ChildItem -LiteralPath $runsRoot -Recurse -File | ForEach-Object {
+        Get-Content -LiteralPath $_.FullName -Raw -ErrorAction SilentlyContinue
+    }) -join "`n"
+    foreach ($marker in @($promptMarker, $expectedMarker)) {
+        if ($persisted -match [regex]::Escape($marker)) {
+            throw "trace eval artifacts duplicated raw prompt or expected text"
+        }
+    }
+
+    $manifest = Get-Content -LiteralPath $json.manifests.result -Raw | ConvertFrom-Json
+    $result = @($manifest.results)[0]
+    if ($result.PSObject.Properties.Name -contains "prompt" -or $result.PSObject.Properties.Name -contains "expected") {
+        throw "trace eval manifest contains raw prompt or expected fields"
+    }
+    if (-not $result.prompt_sha256 -or -not $result.expected_sha256) {
+        throw "trace eval manifest is missing prompt or expected hashes"
+    }
+    "trace eval dry-run artifacts retain hashes and expectation terms without duplicating raw prompt text"
 }
 
 $failed = @($results | Where-Object { $_.status -eq "failed" })

@@ -1,0 +1,324 @@
+{
+  "schema": "codex-harness-components-v1",
+  "scope": "global",
+  "updated_at": "2026-08-04",
+  "review_policy": {
+    "allowed_statuses": [
+      "proposed",
+      "experimental",
+      "active",
+      "watch",
+      "deprecated",
+      "retired"
+    ],
+    "experimental_max_days": 90,
+    "deprecated_grace_days": 30
+  },
+  "components": [
+    {
+      "id": "lifecycle-guardrails",
+      "type": "hooks",
+      "owner": "harness-maintainer",
+      "purpose": "Provide quiet lifecycle reminders and privacy-safe local metadata checks.",
+      "compensation_hypothesis": "Small lifecycle checks compensate for missed verification and handoff steps without storing task content.",
+      "paths": [
+        "hooks.json",
+        "scripts/codex-hook.ps1",
+        "scripts/codex-hook-router.ps1"
+      ],
+      "evidence": [
+        "scripts/test-codex-workflow-core.ps1"
+      ],
+      "cost": {
+        "level": "low",
+        "drivers": [
+          "short local execution",
+          "small maintenance surface"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "lifecycle latency",
+          "privacy regressions"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 30,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "Repeated lifecycle delay exceeds the bounded value of the reminders.",
+        "Equivalent verification and handoff coverage exists with lower privacy risk."
+      ]
+    },
+    {
+      "id": "role-guidance",
+      "type": "agents",
+      "owner": "harness-maintainer",
+      "purpose": "Provide bounded role instructions for planning, review, testing, research, and maintenance work.",
+      "compensation_hypothesis": "Focused role guidance compensates for context overload and makes checker responsibilities explicit.",
+      "paths": [
+        "agents"
+      ],
+      "evidence": [
+        "scripts/new-agent-run.ps1",
+        "harness-evals/run-harness-evals.ps1"
+      ],
+      "cost": {
+        "level": "medium",
+        "drivers": [
+          "instruction maintenance",
+          "role selection overhead"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "role overlap",
+          "stale instructions"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 60,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "A role has no distinct decision or verification responsibility.",
+        "Repeated use shows that the role duplicates another active component."
+      ]
+    },
+    {
+      "id": "reusable-instructions",
+      "type": "skills",
+      "owner": "harness-maintainer",
+      "purpose": "Package reusable task instructions with explicit triggers and verification guidance.",
+      "compensation_hypothesis": "On-demand instructions compensate for repeated domain mistakes while keeping global context small.",
+      "paths": [
+        "skills"
+      ],
+      "evidence": [
+        "scripts/audit-skill-surface.ps1",
+        "scripts/audit-context-budget.ps1"
+      ],
+      "cost": {
+        "level": "medium",
+        "drivers": [
+          "trigger maintenance",
+          "active surface review"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "trigger ambiguity",
+          "instruction drift"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 60,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "The trigger is no longer distinct or repeatedly selects the wrong workflow.",
+        "The instruction can be replaced by a smaller rule, script, or document."
+      ]
+    },
+    {
+      "id": "behavior-evaluation",
+      "type": "evals",
+      "owner": "harness-maintainer",
+      "purpose": "Check deterministic harness behavior and record bounded trace comparisons.",
+      "compensation_hypothesis": "Repeatable evaluation compensates for self-review blind spots and exposes behavioral regression.",
+      "paths": [
+        "harness-evals",
+        "scripts/invoke-verification-envelope.ps1"
+      ],
+      "evidence": [
+        "harness-evals/run-harness-evals.ps1",
+        "harness-evals/run-trace-evals.ps1"
+      ],
+      "cost": {
+        "level": "medium",
+        "drivers": [
+          "runtime duration",
+          "trace review"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "weak expectations",
+          "generated artifact growth"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 30,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "A case no longer represents an active invariant or observed failure.",
+        "A cheaper deterministic check provides equivalent regression evidence."
+      ]
+    },
+    {
+      "id": "scheduled-maintenance",
+      "type": "automations",
+      "owner": "harness-maintainer",
+      "purpose": "Describe bounded recurring health checks without publishing runtime task state.",
+      "compensation_hypothesis": "A small recurring review compensates for slow configuration drift between active maintenance sessions.",
+      "paths": [
+        "automations/harness/automation.toml.template",
+        "docs/job-state.md",
+        "scripts/new-job-state.ps1"
+      ],
+      "evidence": [
+        "scripts/harness-health.ps1"
+      ],
+      "cost": {
+        "level": "low",
+        "drivers": [
+          "scheduled execution",
+          "review of bounded findings"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "stale schedule assumptions",
+          "unbounded repair scope"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 90,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "Recurring checks produce no actionable signal across multiple review periods.",
+        "The same coverage becomes part of a cheaper explicit maintenance gate."
+      ]
+    },
+    {
+      "id": "context-connectors",
+      "type": "mcps",
+      "owner": "harness-maintainer",
+      "purpose": "Document optional context and action connectors while keeping credentials and runtime configuration local.",
+      "compensation_hypothesis": "Purpose-built connectors compensate for incomplete local context when a task needs external state or structured tools.",
+      "paths": [
+        "harness.capabilities.json"
+      ],
+      "evidence": [
+        "docs/tool-surface.md"
+      ],
+      "cost": {
+        "level": "medium",
+        "drivers": [
+          "tool discovery",
+          "remote execution or quota"
+        ]
+      },
+      "risk": {
+        "level": "high",
+        "drivers": [
+          "permission scope",
+          "external state changes",
+          "credential handling"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 30,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "The connector has no active task class or repeats a local capability.",
+        "Its permission, reliability, or quota cost exceeds its measured evidence value."
+      ]
+    },
+    {
+      "id": "maintenance-utilities",
+      "type": "scripts",
+      "owner": "harness-maintainer",
+      "purpose": "Provide directly runnable checks, records, and maintenance operations for the harness.",
+      "compensation_hypothesis": "Deterministic utilities compensate for repetitive manual steps and make completion evidence reproducible.",
+      "paths": [
+        "scripts"
+      ],
+      "evidence": [
+        "scripts/verify-global-harness.ps1"
+      ],
+      "cost": {
+        "level": "medium",
+        "drivers": [
+          "PowerShell compatibility",
+          "script maintenance"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "filesystem mutation",
+          "incorrect root resolution"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 45,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "A utility duplicates a maintained command with the same safety properties.",
+        "No active workflow or verification gate references the utility."
+      ]
+    },
+    {
+      "id": "operating-guidance",
+      "type": "docs",
+      "owner": "harness-maintainer",
+      "purpose": "Keep stable operating, safety, evidence, and component evolution guidance reviewable.",
+      "compensation_hypothesis": "Durable documentation compensates for cross-session context loss and prevents hidden maintenance conventions.",
+      "paths": [
+        "docs"
+      ],
+      "evidence": [
+        "docs/component-evolution.md"
+      ],
+      "cost": {
+        "level": "low",
+        "drivers": [
+          "documentation review",
+          "path synchronization"
+        ]
+      },
+      "risk": {
+        "level": "medium",
+        "drivers": [
+          "stale instructions",
+          "source and runtime drift"
+        ]
+      },
+      "status": "active",
+      "status_since": "2026-08-04",
+      "review": {
+        "cadence_days": 45,
+        "last_reviewed": "2026-08-04"
+      },
+      "retirement_criteria": [
+        "Guidance is superseded and all inbound references have moved.",
+        "The document no longer records a distinct invariant or workflow."
+      ]
+    }
+  ]
+}

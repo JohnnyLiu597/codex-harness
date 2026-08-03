@@ -36,13 +36,39 @@ function Copy-MaintainableDirectory {
     )
 
     New-Item -ItemType Directory -Force -Path $Target | Out-Null
-    $sourcePrefix = $Source.TrimEnd('\') + '\'
-    $excludedDirectories = @($ExcludeDirectoryNames) + @("__pycache__")
+    $sourcePrefix = (Get-Item -LiteralPath $Source).FullName.TrimEnd('\') + '\'
+    $excludedDirectories = @($ExcludeDirectoryNames) + @(
+        "__pycache__",
+        ".codex-trash",
+        "plugins",
+        "plugin",
+        "cache",
+        "caches",
+        "session",
+        "sessions",
+        "archived_sessions",
+        "log",
+        "logs",
+        "hook-logs",
+        "browser",
+        "browser-state",
+        "browser_state",
+        "computer-use",
+        "process_manager",
+        "harness-health",
+        "harness-changes",
+        "skills.archived",
+        "agents.archived",
+        "backups",
+        "archived"
+    )
     foreach ($file in @(Get-ChildItem -LiteralPath $Source -Recurse -Force -File)) {
         $relative = $file.FullName.Substring($sourcePrefix.Length)
         $segments = $relative -split '[\\/]'
-        if (@($segments | Where-Object { $_ -in $excludedDirectories }).Count -gt 0) { continue }
-        if ($file.Extension -in @(".pyc", ".pyo")) { continue }
+        if (@($segments | Where-Object { $_ -in $excludedDirectories -or $_ -like "backup-*" }).Count -gt 0) { continue }
+        if ($file.Name -in @("auth.json", "config.toml", ".sync-manifest.json")) { continue }
+        if ($file.Name -eq ".codex-private" -or $file.Name -match '(?i)\.bak(?:[-.].*)?$|\.backup(?:[-.].*)?$|~$') { continue }
+        if ($file.Name -like "*.sqlite*" -or $file.Extension -in @(".pyc", ".pyo")) { continue }
         $destination = Join-Path $Target $relative
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
         Copy-Item -LiteralPath $file.FullName -Destination $destination -Force
@@ -71,6 +97,7 @@ function Copy-ActiveSkills {
     $count = 0
     foreach ($dir in @(Get-ChildItem -LiteralPath $source -Directory -Force)) {
         if ($dir.Name -in @(".system", "codex-primary-runtime")) { continue }
+        if (Test-Path -LiteralPath (Join-Path $dir.FullName ".codex-private") -PathType Leaf) { continue }
         Copy-MaintainableDirectory -Source $dir.FullName -Target (Join-Path $target $dir.Name)
         $count++
     }
@@ -115,7 +142,7 @@ if ($Refresh -and (Test-Path -LiteralPath $srcRoot)) {
 }
 
 $copiedFiles = New-Object System.Collections.Generic.List[string]
-foreach ($file in @("AGENTS.md", "CODEX.md", "harness.capabilities.json")) {
+foreach ($file in @("AGENTS.md", "CODEX.md", "harness.capabilities.json", "harness.components.json", "hooks.json")) {
     if (Copy-FileIfPresent -RelativePath $file) { $copiedFiles.Add($file) | Out-Null }
 }
 
@@ -176,7 +203,9 @@ $manifest = [ordered]@{
     )
 }
 
-$manifestPath = Join-Path $srcRoot ".sync-manifest.json"
+$manifestDirectory = Join-Path $artifactsRoot "sync-manifests"
+New-Item -ItemType Directory -Force -Path $manifestDirectory | Out-Null
+$manifestPath = Join-Path $manifestDirectory ((Get-Date -Format "yyyyMMdd-HHmmssfff") + "-runtime-to-source.json")
 $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
 [ordered]@{

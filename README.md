@@ -35,6 +35,14 @@ This harness separates those concerns:
 The result is a small architecture for turning a working Codex environment into
 something another maintainer can inspect, adapt, and improve.
 
+Recent harness upgrades now close the core Codex workflow loop with
+privacy-safe lifecycle hooks, native sub-agent guardrails, bounded context
+budgets, resumable job-state records, verification gates and envelopes,
+trace/tool-eval follow-up, learning intake, and component-registry audits.
+The bundled agents are standalone Codex custom-agent files, so a source install
+does not depend on machine-local role declarations that are excluded from the
+repository.
+
 ## Layout
 
 ```text
@@ -61,14 +69,17 @@ the package, and syncing source back to the runtime.
 - Codex global instructions and durable behavior notes.
 - Codex sub-agent profiles for planning, review, testing, docs, security, and
   harness auditing.
-- Hook routing and stop-log scripts designed to stay quiet and local.
+- Hook routing, lifecycle guardrails, and stop-log scripts designed to stay
+  quiet and local.
 - A weekly Codex automation template for harness health and small repairs.
-- Workflow scripts for test-surface detection, verification, and harness
-  checks.
+- Workflow scripts for test-surface detection, verification, learning intake,
+  job-state records, and harness checks.
 - Project scaffold templates for long-running repositories.
 - Loop admission guidance for recurring, event-driven, cross-session, or
   parallel Codex work.
 - Deterministic harness evals and trace-eval plumbing.
+- Component registry audit and bounded ablation records for deciding what stays
+  in the harness.
 - Global public-URL intake with deterministic acquisition, MIME/signature
   detection, intent-aware routing, render-state checks, and browser/document/
   data/media handoff.
@@ -148,7 +159,9 @@ src -> verify-release Fast/Standard/Full -> commit/push
 checks git whitespace and package public-readiness without installing runtime
 or running deterministic evals. `Standard` adds runtime sync preview and can
 install the local runtime with `-InstallRuntime`. `Full` installs runtime,
-runs global verification, and runs deterministic harness evals.
+runs global verification, and runs deterministic harness evals. Use `Full`
+when hooks, sub-agent workflow control, eval plumbing, sync rules,
+verification envelopes, or publication boundaries changed.
 
 Use Audit Only when you only want to inspect drift, public-readiness, or health
 without changing files.
@@ -159,7 +172,14 @@ The repository intentionally does not publish `config.toml`, `auth.json`,
 SQLite state, logs, sessions, plugin caches, browser state, generated eval runs,
 or machine-local runtime artifacts. Automation source is stored as a template;
 the app-owned recurring task is registered separately through Codex App. The
-package verifier checks this boundary.
+package verifier checks this boundary. Hook logs, job-state records, learning
+intake artifacts, bounded ablation runs, and verification envelopes belong in
+runtime or ignored project artifacts, not the source payload.
+
+A locally installed personal skill can remain outside the public package by
+placing a `.codex-private` marker in that runtime skill directory. Runtime to
+source refreshes skip marked skills, while the local Codex install keeps using
+them.
 
 Bundled skills or assets with their own license, notice, or attribution files
 keep those local terms. The top-level license covers the project-specific

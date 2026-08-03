@@ -16,3 +16,7 @@ Modes:
 
 Run records are written to `artifacts/verification-gates/`. Runtime behavior
 that proves a feature should still be recorded with `scripts/new-runtime-run.ps1`.
+
+Use `scripts/invoke-verification-envelope.ps1` for a single tamper-evident
+check with source, test, grader, environment, evidence, and protected-path
+hashes.

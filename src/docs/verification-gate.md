@@ -45,3 +45,8 @@ smoke, runtime, and harness commands before deeper checks run.
 
 Do not use this as a substitute for real runtime evidence. When user-facing
 behavior changes, record proof with `scripts/new-runtime-run.ps1`.
+
+Use `scripts/invoke-verification-envelope.ps1` when a single check needs a
+tamper-evident record of source, test, grader, command, output, environment,
+evidence, and protected paths. The gate selects depth; the envelope records a
+specific check.

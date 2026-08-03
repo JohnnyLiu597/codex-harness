@@ -16,6 +16,8 @@ codex-harness/
 
 The `src/` directory mirrors only maintainable runtime assets. It deliberately
 excludes secrets, databases, logs, sessions, caches, and plugin downloads.
+Runtime-only personal skills may remain installed locally with a
+`.codex-private` marker; runtime-to-source refresh skips those directories.
 
 ## Runtime Layer
 
@@ -27,6 +29,63 @@ $env:USERPROFILE\.codex
 
 It contains both maintainable assets and local runtime state. Runtime state is
 not suitable for GitHub.
+
+## Workflow Core
+
+The current harness closes its main engineering loop with native Codex
+surfaces instead of a separate runtime:
+
+- `hooks.json` defines the lifecycle entry points.
+- `scripts\codex-hook.ps1` and `scripts\codex-hook-router.ps1` enforce thin,
+  privacy-safe hook behavior.
+- `agents\*.toml` provide native sub-agent roles.
+- `scripts\new-job-state.ps1` records resumable work across goal, subagent,
+  worktree, scheduled, event-driven, and manual paths.
+- `scripts\invoke-verification-envelope.ps1` and
+  `scripts\invoke-verification-gate.ps1` separate tamper-evident check records
+  from task-level gate selection.
+- `scripts\new-learning-intake.ps1`, `scripts\audit-harness-components.ps1`,
+  and `scripts\new-ablation-run.ps1` provide bounded follow-up and retirement
+  discipline.
+
+The repository is a source package, but its maintainable payload mirrors the
+installed runtime paths. After source-to-runtime sync, `src\agents\*.toml`
+becomes `~\.codex\agents\*.toml`, `src\hooks.json` becomes
+`~\.codex\hooks.json`, and `src\skills\` becomes `~\.codex\skills\`.
+Standalone custom-agent files carry their own `name`, `description`, and
+`developer_instructions`; they do not depend on unpublished `config.toml`
+role declarations.
+
+Codex-native contracts and harness-owned extensions are intentionally kept
+distinct. Hooks, layered `AGENTS.md`, standalone custom agents, skills,
+worktrees, reviews, permissions, and automations are native Codex surfaces.
+Verification envelopes, job-state adapters, learning intake, component
+registries, and ablation records are this harness's reviewable extensions built
+on top of those surfaces.
+
+## Hook And Sub-Agent Guardrails
+
+Hooks are intentionally narrow. They record lifecycle metadata, reject only
+high-confidence destructive or secret-bearing actions, and keep compact/session
+recovery bounded. They do not capture raw prompts, full tool output,
+transcripts, or secrets.
+
+Native sub-agents are bounded by ownership, attempt, verification, and handoff
+records rather than by an external queue. The intended pattern is maker-checker:
+delegated work records owner, checker, last verified commit, and evidence path;
+worktree or branch isolation is explicit when a task should not share the main
+editing surface.
+
+## Context And State Boundaries
+
+Context is budgeted with deterministic byte and line thresholds so startup
+anchors, layered `AGENTS.md`, and `SKILL.md` files stay small enough to remain
+useful. Durable resumable state lives in artifact records such as session
+summaries and job-state entries, not in ever-growing root instructions.
+
+The job-state adapter normalizes native work into a small canonical state model
+without becoming a scheduler. It records what is running, checking, blocked, or
+passed, plus non-secret resume and evidence references.
 
 ## Sync Direction
 
@@ -54,6 +113,10 @@ The source release path is risk-tiered:
 - `Full`: install runtime, run global verification, and run deterministic
   harness evals.
 
+For this workflow-core upgrade, `Full` is the required release gate because the
+changed surface spans hooks, agents, verification plumbing, eval closure, sync
+expectations, and public-readiness boundaries.
+
 ## Loop Layer
 
 Loop Engineering is treated as an L4 project capability, not a replacement for
@@ -65,6 +128,23 @@ gate, and stop conditions before it is piloted.
 The default posture is conservative: fix L1 prompt, L2 context, and L3 harness
 failures before adding loops. A loop should solve human-triggered serial
 bottlenecks only after the single-task path is already reliable.
+
+## Verification And Learning Closure
+
+Verification is layered:
+
+- release gates choose how far to verify a source change
+- verification gates choose the right project closure mode for a task
+- verification envelopes preserve high-value check evidence
+- deterministic harness evals guard workflow-core behavior
+- trace evals and tool evals show repeated misses that should become docs,
+  rules, skills, scripts, or evals
+- learning intake records those next-step decisions without directly mutating
+  source
+
+This keeps the harness reviewable: evidence is recorded, follow-up is routed,
+and component changes remain bounded by registry ownership and ablation
+evidence.
 
 ## Runtime Payload
 
@@ -128,3 +208,7 @@ sanitized template is created later.
 Automation templates are source assets, not raw runtime state. The actual
 recurring task is registered through Codex App's automation surface; directly
 syncing a TOML file can leave a file on disk without a visible app task.
+
+Publication also excludes hook logs, verification envelopes, raw trace/tool
+eval artifacts, job-state records, learning intake records, ablation runs, and
+other generated local evidence unless a sanitized sample is created on purpose.

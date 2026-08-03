@@ -29,6 +29,8 @@ $required = @(
     "AGENTS.md",
     "CODEX.md",
     "harness.capabilities.json",
+    "harness.components.json",
+    "hooks.json",
     "config.toml",
     "docs\auth.md",
     "docs\environment.md",
@@ -42,11 +44,15 @@ $required = @(
     "docs\tool-failures.md",
     "docs\skill-surface.md",
     "docs\codex-workflow-core.md",
+    "docs\context-budget.md",
+    "docs\job-state.md",
+    "docs\component-evolution.md",
     "rules\default.rules",
     "scripts\audit-project-harness.ps1",
     "scripts\check-project-docs.ps1",
     "scripts\check-harness-surface.ps1",
     "scripts\init-project-harness.ps1",
+    "scripts\codex-hook.ps1",
     "scripts\codex-hook-router.ps1",
     "scripts\codex-stop-log.ps1",
     "scripts\detect-project-test-surface.ps1",
@@ -56,12 +62,17 @@ $required = @(
     "scripts\new-trace-eval.ps1",
     "scripts\new-session-summary.ps1",
     "scripts\new-agent-run.ps1",
+    "scripts\new-job-state.ps1",
     "scripts\new-learning-intake.ps1",
     "scripts\new-runtime-run.ps1",
+    "scripts\invoke-verification-envelope.ps1",
     "scripts\invoke-verification-gate.ps1",
     "scripts\summarize-trace-evals.ps1",
     "scripts\new-tool-failure.ps1",
     "scripts\audit-skill-surface.ps1",
+    "scripts\audit-context-budget.ps1",
+    "scripts\audit-harness-components.ps1",
+    "scripts\new-ablation-run.ps1",
     "scripts\safe-remove.ps1",
     "scripts\verify-global-harness.ps1",
     "scripts\harness-health.ps1",
@@ -79,7 +90,11 @@ $required = @(
     "templates\project-harness\trace-evals.md",
     "templates\project-harness\tool-failures.md",
     "templates\project-harness\skill-surface.md",
+    "templates\project-harness\context-budget.md",
+    "templates\project-harness\job-state.md",
+    "templates\project-harness\component-evolution.md",
     "templates\project-harness\harness.capabilities.json",
+    "templates\project-harness\harness.components.json",
     "templates\project-harness\code-map.md",
     "templates\project-harness\features.json",
     "templates\project-harness\quality.md",
@@ -111,12 +126,17 @@ $required = @(
     "templates\project-harness\scripts\new-trace-eval.ps1",
     "templates\project-harness\scripts\new-session-summary.ps1",
     "templates\project-harness\scripts\new-agent-run.ps1",
+    "templates\project-harness\scripts\new-job-state.ps1",
     "templates\project-harness\scripts\new-learning-intake.ps1",
     "templates\project-harness\scripts\new-runtime-run.ps1",
     "templates\project-harness\scripts\invoke-verification-gate.ps1",
+    "templates\project-harness\scripts\invoke-verification-envelope.ps1",
     "templates\project-harness\scripts\summarize-trace-evals.ps1",
     "templates\project-harness\scripts\new-tool-failure.ps1",
     "templates\project-harness\scripts\audit-skill-surface.ps1",
+    "templates\project-harness\scripts\audit-context-budget.ps1",
+    "templates\project-harness\scripts\audit-harness-components.ps1",
+    "templates\project-harness\scripts\new-ablation-run.ps1",
     "templates\project-harness\scripts\new-review.ps1",
     "templates\project-harness\scripts\new-run.ps1",
     "templates\project-harness\scripts\new-smoke-run.ps1",
@@ -130,6 +150,8 @@ $required = @(
     "harness-evals\run-harness-evals.ps1",
     "harness-evals\run-trace-evals.ps1",
     "harness-evals\grade-trace-evals.ps1",
+    "harness-evals\test-verification-envelope.ps1",
+    "harness-evals\test-project-harness-optimizer.ps1",
     "harness-evals\trace-evals\README.md",
     "harness-evals\trace-evals\prompts.csv",
     "harness-evals\cases\docs-sync\README.md",
@@ -211,7 +233,10 @@ print("toml-ok")
 
 foreach ($jsonPath in @(
     "harness.capabilities.json",
+    "harness.components.json",
+    "hooks.json",
     "templates\project-harness\harness.capabilities.json",
+    "templates\project-harness\harness.components.json",
     "templates\project-harness\features.json"
 )) {
     try {
@@ -239,11 +264,38 @@ if ($config -notmatch '(?m)^plugin_hooks\s*=\s*true') {
 if ($config -notmatch '(?m)^goals\s*=\s*true') {
     throw "Feature goals=true is not enabled."
 }
-if ($config -notmatch '\[\[hooks\.Stop\]\]' -or $config -notmatch 'codex-stop-log\.ps1') {
-    throw "Stop hook is not wired to codex-stop-log.ps1."
-}
 if ($config -match 'codex_hooks') {
     throw "Found deprecated codex_hooks in active global config."
+}
+if ($config -match 'codex-stop-log\.ps1' -or $config -match 'codex-hook-router\.ps1') {
+    throw "Legacy inline hook wiring remains in config.toml; use hooks.json as the single user-level hook source."
+}
+
+$hooksPath = Join-Path $codexHomePath "hooks.json"
+$hooks = Get-Content -LiteralPath $hooksPath -Raw -Encoding UTF8 | ConvertFrom-Json
+foreach ($eventName in @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")) {
+    if ($hooks.hooks.PSObject.Properties.Name -notcontains $eventName) {
+        throw "hooks.json is missing required lifecycle event: $eventName"
+    }
+}
+
+$agentNames = New-Object System.Collections.Generic.List[string]
+foreach ($agentFile in @(Get-ChildItem -LiteralPath (Join-Path $codexHomePath "agents") -File -Filter "*.toml" | Sort-Object Name)) {
+    $agentConfig = Get-Content -LiteralPath $agentFile.FullName -Raw -Encoding UTF8
+    $nameMatch = [regex]::Match($agentConfig, '(?m)^\s*name\s*=\s*"([^"]+)"\s*$')
+    $descriptionMatch = [regex]::Match($agentConfig, '(?m)^\s*description\s*=\s*"([^"]+)"\s*$')
+    if (-not $nameMatch.Success -or -not $descriptionMatch.Success -or $agentConfig -notmatch '(?m)^\s*developer_instructions\s*=') {
+        throw "Custom agent file is missing name, description, or developer_instructions: $($agentFile.Name)"
+    }
+    $expectedName = [System.IO.Path]::GetFileNameWithoutExtension($agentFile.Name).Replace("-", "_")
+    $agentName = $nameMatch.Groups[1].Value
+    if ($agentName -ne $expectedName) {
+        throw "Custom agent name does not match its portable filename convention: $($agentFile.Name) -> $agentName"
+    }
+    if ($agentNames.Contains($agentName)) {
+        throw "Duplicate custom agent name: $agentName"
+    }
+    $agentNames.Add($agentName) | Out-Null
 }
 
 foreach ($scriptPath in @(
@@ -251,6 +303,7 @@ foreach ($scriptPath in @(
     "scripts\check-project-docs.ps1",
     "scripts\check-harness-surface.ps1",
     "scripts\init-project-harness.ps1",
+    "scripts\codex-hook.ps1",
     "scripts\codex-hook-router.ps1",
     "scripts\codex-stop-log.ps1",
     "scripts\detect-project-test-surface.ps1",
@@ -260,12 +313,17 @@ foreach ($scriptPath in @(
     "scripts\new-trace-eval.ps1",
     "scripts\new-session-summary.ps1",
     "scripts\new-agent-run.ps1",
+    "scripts\new-job-state.ps1",
     "scripts\new-learning-intake.ps1",
     "scripts\new-runtime-run.ps1",
+    "scripts\invoke-verification-envelope.ps1",
     "scripts\invoke-verification-gate.ps1",
     "scripts\summarize-trace-evals.ps1",
     "scripts\new-tool-failure.ps1",
     "scripts\audit-skill-surface.ps1",
+    "scripts\audit-context-budget.ps1",
+    "scripts\audit-harness-components.ps1",
+    "scripts\new-ablation-run.ps1",
     "scripts\safe-remove.ps1",
     "scripts\verify-global-harness.ps1",
     "scripts\harness-health.ps1",
@@ -276,6 +334,8 @@ foreach ($scriptPath in @(
     "harness-evals\test-web-source-resolver.ps1",
     "harness-evals\run-trace-evals.ps1",
     "harness-evals\grade-trace-evals.ps1",
+    "harness-evals\test-verification-envelope.ps1",
+    "harness-evals\test-project-harness-optimizer.ps1",
     "templates\project-harness\scripts\audit-worktree.ps1",
     "templates\project-harness\scripts\audit-project-harness.ps1",
     "templates\project-harness\scripts\check-all.ps1",
@@ -292,12 +352,17 @@ foreach ($scriptPath in @(
     "templates\project-harness\scripts\new-trace-eval.ps1",
     "templates\project-harness\scripts\new-session-summary.ps1",
     "templates\project-harness\scripts\new-agent-run.ps1",
+    "templates\project-harness\scripts\new-job-state.ps1",
     "templates\project-harness\scripts\new-learning-intake.ps1",
     "templates\project-harness\scripts\new-runtime-run.ps1",
     "templates\project-harness\scripts\invoke-verification-gate.ps1",
+    "templates\project-harness\scripts\invoke-verification-envelope.ps1",
     "templates\project-harness\scripts\summarize-trace-evals.ps1",
     "templates\project-harness\scripts\new-tool-failure.ps1",
     "templates\project-harness\scripts\audit-skill-surface.ps1",
+    "templates\project-harness\scripts\audit-context-budget.ps1",
+    "templates\project-harness\scripts\audit-harness-components.ps1",
+    "templates\project-harness\scripts\new-ablation-run.ps1",
     "templates\project-harness\scripts\new-review.ps1",
     "templates\project-harness\scripts\new-run.ps1",
     "templates\project-harness\scripts\new-smoke-run.ps1",
@@ -331,8 +396,39 @@ if ($python) {
     }
 }
 
+$runtimeSkillFiles = @(Get-ChildItem -LiteralPath (Join-Path $codexHomePath "skills") -Directory -Force |
+    ForEach-Object { Join-Path $_.FullName "SKILL.md" } |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+foreach ($skillPath in $runtimeSkillFiles) {
+    $bytes = [System.IO.File]::ReadAllBytes($skillPath)
+    if ($bytes.Length -lt 3 -or $bytes[0] -ne 0x2D -or $bytes[1] -ne 0x2D -or $bytes[2] -ne 0x2D) {
+        throw "Skill must start with --- in UTF-8 without BOM: $skillPath"
+    }
+    $skillText = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
+    $frontmatter = [regex]::Match($skillText, '\A---\r?\n(?<body>[\s\S]*?)\r?\n---(?:\r?\n|$)')
+    if (-not $frontmatter.Success) {
+        throw "Malformed skill frontmatter: $skillPath"
+    }
+    $metadata = $frontmatter.Groups["body"].Value
+    $name = [regex]::Match($metadata, '(?m)^name:\s*\S+')
+    $description = [regex]::Match($metadata, '(?m)^description:\s*\S+')
+    if (-not $name.Success -or -not $description.Success) {
+        throw "Skill name or description missing: $skillPath"
+    }
+}
+
 $workflowCoreTest = Join-Path $codexHomePath "scripts\test-codex-workflow-core.ps1"
 & $workflowCoreTest -CodexHome $codexHomePath | Out-Null
+& (Join-Path $codexHomePath "harness-evals\test-verification-envelope.ps1") -CodexHome $codexHomePath | Out-Null
+& (Join-Path $codexHomePath "harness-evals\test-project-harness-optimizer.ps1") -CodexHome $codexHomePath | Out-Null
+$contextBudget = (& (Join-Path $codexHomePath "scripts\audit-context-budget.ps1") -ProjectRoot $codexHomePath -CodexHome $codexHomePath) | ConvertFrom-Json
+if ($contextBudget.status -eq "failed" -or -not $contextBudget.read_only) {
+    throw "Global context budget audit failed or mutated state."
+}
+$componentAudit = (& (Join-Path $codexHomePath "scripts\audit-harness-components.ps1") -ProjectRoot $codexHomePath) | ConvertFrom-Json
+if ($componentAudit.status -eq "failed" -or -not $componentAudit.read_only) {
+    throw "Global component registry audit failed or mutated state."
+}
 
 if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) {
     throw "rg not found on PATH and bundled fallback missing."
@@ -347,6 +443,9 @@ if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) {
     mcp_subsections = $configMcpSubsections
     hooks = @{
         enabled = $true
-        stop_log = "scripts\codex-stop-log.ps1"
+        source = "hooks.json"
+        router = "scripts\codex-hook.ps1"
     }
+    custom_agents = $agentNames.ToArray()
+    skill_files_checked = $runtimeSkillFiles.Count
 } | ConvertTo-Json -Depth 8 -Compress

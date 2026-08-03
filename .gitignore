@@ -1,8 +1,6 @@
 # Runtime secrets and machine-local state
 auth.json
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal
+*.sqlite*
 *.bak
 *.bak-*
 *.lock
@@ -15,11 +13,15 @@ src/auth.json
 src/config.toml
 src/plugins/
 src/cache/
+src/caches/
 src/sessions/
 src/archived_sessions/
 src/log/
+src/logs/
 src/hook-logs/
 src/browser/
+src/browser-state/
+src/browser_state/
 src/computer-use/
 src/process_manager/
 src/.sandbox/
@@ -36,9 +38,7 @@ src/skills.archived/
 src/agents.archived/
 src/backup-*/
 src/.sync-manifest.json
-src/*.sqlite
-src/*.sqlite-shm
-src/*.sqlite-wal
+src/*.sqlite*
 src/*.bak
 src/**/*.bak-*
 src/**/__pycache__/

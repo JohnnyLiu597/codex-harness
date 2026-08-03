@@ -62,7 +62,11 @@ $requiredFiles = @(
     "docs\trace-evals.md",
     "docs\tool-failures.md",
     "docs\skill-surface.md",
+    "docs\context-budget.md",
+    "docs\job-state.md",
+    "docs\component-evolution.md",
     "harness.capabilities.json",
+    "harness.components.json",
     "evals\prompts.csv",
     "evals\tool-evals\README.md",
     "scripts\verify-harness.ps1",
@@ -75,12 +79,17 @@ $requiredFiles = @(
     "scripts\new-trace-eval.ps1",
     "scripts\new-session-summary.ps1",
     "scripts\new-agent-run.ps1",
+    "scripts\new-job-state.ps1",
     "scripts\new-learning-intake.ps1",
     "scripts\new-runtime-run.ps1",
     "scripts\invoke-verification-gate.ps1",
+    "scripts\invoke-verification-envelope.ps1",
     "scripts\summarize-trace-evals.ps1",
     "scripts\new-tool-failure.ps1",
     "scripts\audit-skill-surface.ps1",
+    "scripts\audit-context-budget.ps1",
+    "scripts\audit-harness-components.ps1",
+    "scripts\new-ablation-run.ps1",
     "scripts\new-review.ps1",
     "scripts\new-run.ps1",
     "scripts\new-smoke-run.ps1",
@@ -110,6 +119,11 @@ foreach ($dir in @(
     "artifacts\tool-failures",
     "artifacts\trace-eval-summaries",
     "artifacts\skill-surface",
+    "artifacts\context-budget",
+    "artifacts\job-states",
+    "artifacts\verification-envelopes",
+    "artifacts\component-audits",
+    "artifacts\ablation-runs",
     "evals\tool-evals\cases"
 )) {
     if (Test-Directory -RelativePath $dir) {
@@ -136,6 +150,16 @@ if (Test-Path -LiteralPath $capabilityFile) {
         Add-Check -Name "capability-manifest" -Status "passed" -Detail "parseable"
     } catch {
         Add-Check -Name "capability-manifest" -Status "failed" -Detail $_.Exception.Message
+    }
+}
+
+$componentFile = Join-Path $root "harness.components.json"
+if (Test-Path -LiteralPath $componentFile) {
+    try {
+        Get-Content -LiteralPath $componentFile -Raw | ConvertFrom-Json | Out-Null
+        Add-Check -Name "component-manifest" -Status "passed" -Detail "parseable"
+    } catch {
+        Add-Check -Name "component-manifest" -Status "failed" -Detail $_.Exception.Message
     }
 }
 

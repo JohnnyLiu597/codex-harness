@@ -92,6 +92,8 @@ function Invoke-Native {
 try {
     Invoke-CheckStep -Name "harness-verify" -Script { & .\scripts\verify-harness.ps1 }
     Invoke-CheckStep -Name "project-harness-audit" -Script { & .\scripts\audit-project-harness.ps1 }
+    Invoke-CheckStep -Name "context-budget-audit" -Script { & .\scripts\audit-context-budget.ps1 }
+    Invoke-CheckStep -Name "component-registry-audit" -Script { & .\scripts\audit-harness-components.ps1 }
     Invoke-CheckStep -Name "feature-list" -Script { & .\scripts\check-features.ps1 }
     Invoke-CheckStep -Name "tool-evals" -Script { & .\scripts\check-tool-evals.ps1 }
     Invoke-CheckStep -Name "architecture-check" -Script { & .\scripts\check-architecture.ps1 }

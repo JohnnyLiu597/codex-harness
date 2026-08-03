@@ -9,6 +9,10 @@
     "trace-eval-trends": false,
     "tool-failures": false,
     "skill-surface": false,
+    "context-budget": false,
+    "job-state": false,
+    "verification-envelope": false,
+    "component-evolution": false,
     "coordination": false,
     "research": false,
     "browser-runtime": false,
@@ -31,7 +35,16 @@
     "coordination_records": [
       "scripts\\new-session-summary.ps1",
       "scripts\\new-agent-run.ps1",
+      "scripts\\new-job-state.ps1",
       "scripts\\new-learning-intake.ps1"
+    ],
+    "context_budget": [
+      "scripts\\audit-context-budget.ps1",
+      "docs\\context-budget.md"
+    ],
+    "job_state": [
+      "scripts\\new-job-state.ps1",
+      "docs\\job-state.md"
     ],
     "runtime_evidence": [
       "scripts\\new-runtime-run.ps1",
@@ -39,6 +52,10 @@
     ],
     "verification_gate": [
       "scripts\\invoke-verification-gate.ps1",
+      "docs\\verification-gate.md"
+    ],
+    "verification_envelope": [
+      "scripts\\invoke-verification-envelope.ps1",
       "docs\\verification-gate.md"
     ],
     "loop_policy": [
@@ -55,14 +72,22 @@
     "skill_surface": [
       "scripts\\audit-skill-surface.ps1",
       "docs\\skill-surface.md"
+    ],
+    "component_evolution": [
+      "harness.components.json",
+      "scripts\\audit-harness-components.ps1",
+      "scripts\\new-ablation-run.ps1",
+      "docs\\component-evolution.md"
     ]
   },
   "notes": [
     "Enable optional profiles only when the project actually needs them.",
     "Use runtime evidence records for user-facing behavior and feature verification.",
     "Use verification gate records when a task needs an explicit completion gate.",
+    "Use verification envelopes when a high-value check needs hashes, environment evidence, timeout, or protected-path detection.",
     "Use loop policy before recurring, event-driven, cross-session, or parallel-agent automation.",
     "Use trace summaries, tool failure records, and skill stocktakes when repeated evidence needs trend or surface analysis.",
+    "Use context budgets, job-state records, and the component registry for long-lived or evolving harness work.",
     "Use coordination records when work crosses sessions, workers, or repeated failures.",
     "Keep project-specific MCPs, tools, credentials, and smoke commands documented in docs/."
   ]

@@ -38,11 +38,12 @@ function Invoke-ReleaseStep {
         $global:LASTEXITCODE = 0
         try {
             $output = & $Script 2>&1
+            $stepSucceeded = $?
             $exitCode = $LASTEXITCODE
         } finally {
             $ErrorActionPreference = $previousErrorActionPreference
         }
-        if ($exitCode -ne 0) {
+        if (-not $stepSucceeded) {
             throw "Step exited with code $exitCode. $($output -join "`n")"
         }
         $sw.Stop()
@@ -96,7 +97,31 @@ Invoke-ReleaseStep -Name "package-public-readiness" -Script {
     & (Join-Path $ProjectRoot "deploy\verify-package.ps1") -ProjectRoot $ProjectRoot
 }
 
+Invoke-ReleaseStep -Name "source-sync-boundaries" -Script {
+    & (Join-Path $ProjectRoot "deploy\test-sync-boundaries.ps1") -ProjectRoot $ProjectRoot
+}
+
+Invoke-ReleaseStep -Name "source-optimizer-self-test" -Script {
+    & (Join-Path $ProjectRoot "src\harness-evals\test-project-harness-optimizer.ps1") -CodexHome (Join-Path $ProjectRoot "src")
+}
+
+Invoke-ReleaseStep -Name "source-context-budget" -Script {
+    & (Join-Path $ProjectRoot "src\scripts\audit-context-budget.ps1") -ProjectRoot $ProjectRoot -CodexHome (Join-Path $ProjectRoot "src")
+}
+
+Invoke-ReleaseStep -Name "source-component-registry" -Script {
+    & (Join-Path $ProjectRoot "src\scripts\audit-harness-components.ps1") -ProjectRoot (Join-Path $ProjectRoot "src")
+}
+
 if ($Level -in @("Standard", "Full")) {
+    Invoke-ReleaseStep -Name "source-workflow-core" -Script {
+        & (Join-Path $ProjectRoot "src\scripts\test-codex-workflow-core.ps1") -CodexHome (Join-Path $ProjectRoot "src")
+    }
+
+    Invoke-ReleaseStep -Name "source-verification-envelope" -Script {
+        & (Join-Path $ProjectRoot "src\harness-evals\test-verification-envelope.ps1") -CodexHome (Join-Path $ProjectRoot "src")
+    }
+
     Invoke-ReleaseStep -Name "runtime-sync-preview" -Script {
         & (Join-Path $ProjectRoot "deploy\sync-to-runtime.ps1") -ProjectRoot $ProjectRoot -CodexHome $CodexHome -DryRun
     }
@@ -109,14 +134,14 @@ if ($InstallRuntime) {
 
     Invoke-ReleaseStep -Name "runtime-global-verify" -Script {
         $verifyScript = Join-Path $CodexHome "scripts\verify-global-harness.ps1"
-        powershell -NoProfile -ExecutionPolicy Bypass -File $verifyScript -CodexHome $CodexHome
+        & $verifyScript -CodexHome $CodexHome
     }
 }
 
 if ($Level -eq "Full") {
     Invoke-ReleaseStep -Name "runtime-harness-evals" -Script {
         $evalScript = Join-Path $CodexHome "harness-evals\run-harness-evals.ps1"
-        powershell -NoProfile -ExecutionPolicy Bypass -File $evalScript -CodexHome $CodexHome
+        & $evalScript -CodexHome $CodexHome
     }
 }
 

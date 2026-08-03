@@ -27,6 +27,16 @@ Project scaffolds include the same summarizer at
 - must-not-include violations
 - repeated failures by case id
 - whether failures should become docs, eval, skill, rule, or script changes
+- whether prompt, expectation, runner, grader, result, and environment hashes
+  still match the evidence being compared
 
 Do not run live trace evals casually; they can spend model quota. Prefer dry-run
 plumbing unless the user asks for live eval evidence.
+
+Trace records must not store auth values or proxy values. Environment evidence
+records only presence and non-secret runtime facts.
+
+The prompt CSV remains the canonical source for prompt and expected text.
+Generated result and grade manifests store their SHA-256 values and structured
+expectation terms instead of duplicating the raw fields. Keep live trace output
+and all generated runs local; do not sync them into the source package.

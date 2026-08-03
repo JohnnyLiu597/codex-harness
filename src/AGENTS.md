@@ -62,6 +62,7 @@ For real repositories or long-running work, the preferred project scaffold is:
   CONTEXT.md
   MEMORY.md
   harness.capabilities.json
+  harness.components.json
   docs/
     project.md
     architecture.md
@@ -86,6 +87,9 @@ For real repositories or long-running work, the preferred project scaffold is:
     trace-evals.md
     tool-failures.md
     skill-surface.md
+    context-budget.md
+    job-state.md
+    component-evolution.md
   evals/
     README.md
     prompts.csv
@@ -106,12 +110,17 @@ For real repositories or long-running work, the preferred project scaffold is:
     smoke-runs/
     runtime-runs/
     verification-gates/
+    verification-envelopes/
     tool-failures/
     trace-eval-summaries/
     skill-surface/
+    context-budget/
+    component-audits/
+    ablation-runs/
     reviews/
     session-summaries/
     agent-runs/
+    job-states/
     learning-inbox/
   scripts/
     audit-project-harness.ps1
@@ -125,12 +134,17 @@ For real repositories or long-running work, the preferred project scaffold is:
     new-trace-eval.ps1
     new-session-summary.ps1
     new-agent-run.ps1
+    new-job-state.ps1
     new-learning-intake.ps1
     new-runtime-run.ps1
     invoke-verification-gate.ps1
+    invoke-verification-envelope.ps1
     summarize-trace-evals.ps1
     new-tool-failure.ps1
     audit-skill-surface.ps1
+    audit-context-budget.ps1
+    audit-harness-components.ps1
+    new-ablation-run.ps1
     new-review.ps1
     new-run.ps1
     new-smoke-run.ps1
@@ -151,6 +165,9 @@ If these files are missing:
   cluster at a time and only mark entries passing after concrete evidence.
 - Keep `harness.capabilities.json` as the project-local profile and
   verification manifest when work spans sessions.
+- Keep `harness.components.json` as the project-local component registry when
+  hooks, agents, skills, evals, automations, connectors, scripts, or docs need
+  ownership, evidence, cost, risk, review cadence, or retirement criteria.
 - For long-running goals, create durable records under `artifacts/goals/` using
   a project-local `scripts/new-goal.ps1` when available. Codex `/goal` is only
   the active-session pointer; keep cross-session goals in files. In Codex
@@ -201,15 +218,31 @@ the standard scaffold.
 - Use `scripts/invoke-verification-gate.ps1` for explicit completion gates such
   as `DocsOnly`, `HarnessOnly`, `Runtime`, `Full`, or `BeforeCommit`. Do not
   turn it into a default hook.
+- Use `scripts/invoke-verification-envelope.ps1` when a high-value check needs
+  source, test, grader, output, environment, timeout, and protected-path
+  evidence. Do not store raw command output in the envelope.
 - Use `scripts/summarize-trace-evals.ps1` to compare recent trace eval runs and
   repeated failures.
 - Use `scripts/new-tool-failure.ps1` when tool failures affect a task or repeat.
 - Use `scripts/audit-skill-surface.ps1` for read-only skill surface stocktakes;
   archive or restore skills only after explicit user approval.
+- Use `scripts/audit-context-budget.ps1` before growing root instructions,
+  durable context, or long skills.
+- Use `scripts/audit-harness-components.ps1` before adding overlapping harness
+  parts. Use `scripts/new-ablation-run.ps1` for bounded comparisons; an
+  ablation record never disables or removes a component automatically.
 - For session handoff after compaction, interruption, or multi-step work, use
   `scripts/new-session-summary.ps1`.
 - For delegated or isolated worker tasks, use `artifacts/templates/agent-task.md`
   plus `scripts/new-agent-run.ps1` to record the worker contract and result.
+- Keep custom agents as standalone `agents/*.toml` definitions with `name`,
+  `description`, and `developer_instructions`. Prefer active-model inheritance
+  over stale model pins, and do not require unpublished `config.toml` role
+  declarations for the source package.
+- For native Goal, subagent, worktree, scheduled, event-driven, or manual work
+  that must resume, use `scripts/new-job-state.ps1` as a state adapter. It
+  records observed state and does not create a second scheduler or agent
+  runtime.
 - For repeated failures or lessons that are not ready for a trace eval yet, use
   `scripts/new-learning-intake.ps1` before deciding whether the destination is
   docs, eval, skill, rule, or script.
@@ -301,11 +334,17 @@ the standard scaffold.
   provider config change.
 - Use `~/.codex/scripts/audit-project-harness.ps1 -ProjectRoot <repo>` to
   identify missing project harness files before onboarding or long work.
+- Use `~/.codex/scripts/audit-context-budget.ps1 -ProjectRoot <repo>` before
+  expanding durable instruction surfaces.
+- Use `~/.codex/scripts/audit-harness-components.ps1 -ProjectRoot <repo>` to
+  review component coverage, stale status, missing evidence, and retirement
+  candidates.
 - For project harnesses, prefer deterministic checks such as
   `scripts/check-features.ps1`, `scripts/check-architecture.ps1`, and dry-run
   trace evals before adding heavier observability.
-- Stop hooks should stay silent and local-only. They may write summaries under
-  `~/.codex/hook-logs/`, but should not store raw prompt or payload content.
+- Lifecycle hooks should stay silent, bounded, local-only, and metadata-only.
+  They may write summaries under `~/.codex/hook-logs/`, but should not store
+  raw prompts, commands, patches, tool output, transcripts, or payload values.
 
 ## Operating Model
 

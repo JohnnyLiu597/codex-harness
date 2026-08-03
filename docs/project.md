@@ -11,12 +11,16 @@ published without leaking local state.
 
 - Global Codex instructions and durable behavior notes.
 - Harness capability manifest.
+- Lifecycle hook definitions and privacy-safe hook routing.
+- Native sub-agent profiles with maker-checker and worktree isolation support.
 - Weekly harness automation template.
 - Lightweight policy docs.
 - PowerShell maintenance scripts.
 - Project scaffold templates.
 - Deterministic harness evals.
 - Focused active skills.
+- Context-budget auditing, job-state records, learning intake, and component
+  registry review.
 - Global intent-aware web source intake for HTML, documentation, client apps,
   PDFs, JSON/XML/feeds/text/CSV, images, media, and binary resources.
 - Evidence-graded article completeness and citation resolution as a specialized
@@ -30,6 +34,8 @@ published without leaking local state.
 - Session logs.
 - Plugin caches.
 - Generated images, browser state, and temporary files.
+- Hook logs, verification envelopes, ablation runs, and learning/job-state
+  artifacts.
 - External agent runtimes unless explicitly added as references.
 
 ## Source And Install
@@ -45,7 +51,32 @@ published without leaking local state.
 
 ## Recent Changes
 
-- 2026-08-04: Added and forward-tested `web-source-resolver` as the global URL
+- 2026-08-04: Tightened the public payload boundary after an independent
+  source/runtime audit. Bidirectional sync now excludes backup suffixes,
+  archived payloads, and runtime-only skills marked `.codex-private`; a new
+  deterministic sync test covers both directions. The same test also fixed a
+  Windows short-path relative-path bug. The public automation template is now
+  neutral and model-selectable.
+- 2026-08-04: Added real Codex CLI forward evidence for standalone custom-agent
+  discovery and lifecycle hook loading. The run exposed unsupported compact
+  hook context fields and three BOM-prefixed skills that deterministic checks
+  had missed. The hook contract, skill files, package verifier, runtime
+  verifier, and regression checks now reject those failure modes.
+- 2026-08-04: Aligned the published agent pack with the current standalone
+  Codex custom-agent contract. Every agent now carries a portable name,
+  description, and developer instructions; source and runtime verification
+  reject incomplete or duplicate agent definitions. The package no longer
+  relies on unpublished machine-local role declarations.
+- 2026-08-03: Closed the current Codex-only harness P0/P1/P2 upgrade around
+  native workflow control. Added `hooks.json` lifecycle guardrails, bounded
+  sub-agent ownership and maker-checker records, worktree-aware job-state
+  adapters, context-budget auditing, verification envelope and gate closure,
+  learning intake, trace/tool-eval follow-up, and component-registry plus
+  bounded ablation support. Source Release guidance now treats this surface as
+  a `Full` release gate change, and publication guidance explicitly excludes
+  hook logs, job-state records, learning artifacts, ablation runs, and other
+  local evidence.
+- 2026-08-03: Added and forward-tested `web-source-resolver` as the global URL
   entry in every project. It records deterministic acquisition evidence,
   classifies resources from declared MIME type, content signatures, and file
   extensions, distinguishes static pages, documentation, articles, client
@@ -54,7 +85,7 @@ published without leaking local state.
   images, network opt-in, and private-network blocking. Live checks covered an
   ordinary webpage, a public JSON API, a PDF, a public-account article, and an
   RFC specification.
-- 2026-08-04: Added and forward-tested `article-source-resolver` with classic,
+- 2026-08-03: Added and forward-tested `article-source-resolver` with classic,
   structured/SSR, and generic article parsing; a fixed browser-compatible
   public request profile; raw HTML capture outside source; exact byte hashing;
   charset and mojibake diagnostics; heading coverage; citation and lazy-image

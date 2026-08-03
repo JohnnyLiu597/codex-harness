@@ -3,6 +3,9 @@
 Runtime evidence proves that behavior worked in a real local run, not only in
 static checks or code review.
 
+Records should identify the checked commit and structured environment facts
+without storing secret values, proxy values, browser state, or raw logs.
+
 ## When To Record
 
 Create a runtime run when any of these are true:
@@ -36,3 +39,6 @@ mark a feature as passing unless `-MarkFeaturesPassed` is explicitly supplied.
 
 Do not store secrets, raw auth files, cookies, tokens, browser profiles, or full
 logs. Summarize what happened and link only safe artifacts.
+
+For high-value checks that require source, test, grader, output, environment,
+and protected-path hashes, use `scripts/invoke-verification-envelope.ps1`.

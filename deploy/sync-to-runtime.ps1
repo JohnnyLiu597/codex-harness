@@ -53,13 +53,26 @@ function Copy-MaintainableDirectory {
     )
 
     New-Item -ItemType Directory -Force -Path $Target | Out-Null
-    $sourcePrefix = $Source.TrimEnd('\') + '\'
-    $excludedDirectories = @($ExcludeDirectoryNames) + @("__pycache__")
+    $sourcePrefix = (Get-Item -LiteralPath $Source).FullName.TrimEnd('\') + '\'
+    $excludedDirectories = @($ExcludeDirectoryNames) + @("__pycache__", "archived")
     foreach ($file in @(Get-ChildItem -LiteralPath $Source -Recurse -Force -File)) {
         $relative = $file.FullName.Substring($sourcePrefix.Length)
         $segments = $relative -split '[\\/]'
         if (@($segments | Where-Object { $_ -in $excludedDirectories }).Count -gt 0) { continue }
+        if ($file.Name -eq ".codex-private" -or $file.Name -match '(?i)\.bak(?:[-.].*)?$|\.backup(?:[-.].*)?$|~$') { continue }
         if ($file.Extension -in @(".pyc", ".pyo")) { continue }
+
+        $privateTarget = $false
+        $targetCursor = $Target
+        for ($index = 0; $index -lt ($segments.Count - 1); $index++) {
+            $targetCursor = Join-Path $targetCursor $segments[$index]
+            if (Test-Path -LiteralPath (Join-Path $targetCursor ".codex-private") -PathType Leaf) {
+                $privateTarget = $true
+                break
+            }
+        }
+        if ($privateTarget) { continue }
+
         $destination = Join-Path $Target $relative
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
         Copy-Item -LiteralPath $file.FullName -Destination $destination -Force
@@ -85,6 +98,9 @@ $planned = @(
     "AGENTS.md",
     "CODEX.md",
     "harness.capabilities.json",
+    "harness.components.json",
+    "hooks.json",
+    "automations",
     "agents",
     "docs",
     "rules",
@@ -108,10 +124,10 @@ if (-not $DryRun -and -not $NoBackup) {
 }
 
 $copied = New-Object System.Collections.Generic.List[string]
-foreach ($file in @("AGENTS.md", "CODEX.md", "harness.capabilities.json")) {
+foreach ($file in @("AGENTS.md", "CODEX.md", "harness.capabilities.json", "harness.components.json", "hooks.json")) {
     if (Copy-FileToRuntime -RelativePath $file) { $copied.Add($file) | Out-Null }
 }
-foreach ($dir in @("agents", "docs", "rules", "scripts", "templates", "skills")) {
+foreach ($dir in @("automations", "agents", "docs", "rules", "scripts", "templates", "skills")) {
     if (Copy-DirectoryToRuntime -RelativePath $dir) { $copied.Add($dir) | Out-Null }
 }
 if (Copy-DirectoryToRuntime -RelativePath "harness-evals" -ExcludeDirectoryNames @("runs")) {
@@ -124,7 +140,7 @@ if (Copy-DirectoryToRuntime -RelativePath "harness-evals" -ExcludeDirectoryNames
     codex_home = $CodexHome
     source_root = $srcRoot
     copied = $copied.ToArray()
-    automation_template = "src\automations\harness\automation.toml.template"
-    automation_note = "Register or update Codex App automations with the app automation_update tool; raw file sync alone does not make an automation visible in the app."
+    automation_template = "automations\harness\automation.toml.template"
+    automation_note = "The source template is synced to runtime, but Codex App automation registration still requires the app automation surface."
     backup = $backupDir
 } | ConvertTo-Json -Depth 8 -Compress

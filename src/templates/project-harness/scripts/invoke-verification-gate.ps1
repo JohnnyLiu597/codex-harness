@@ -120,7 +120,7 @@ function Invoke-ScriptIfPresent {
     param(
         [Parameter(Mandatory = $true)][string]$StepName,
         [Parameter(Mandatory = $true)][string]$ScriptName,
-        [string[]]$Args = @(),
+        [hashtable]$Parameters = @{},
         [switch]$GlobalFallback,
         [switch]$Optional
     )
@@ -141,7 +141,7 @@ function Invoke-ScriptIfPresent {
     }
 
     Invoke-GateStep -Name $StepName -Optional:$Optional -Script {
-        & $scriptPath @Args
+        & $scriptPath @Parameters
     }
 }
 
@@ -150,7 +150,7 @@ function Invoke-DocsGate {
     if (Test-Path -LiteralPath $projectDocsScript) {
         Invoke-GateStep -Name "docs-sync" -Script { & $projectDocsScript -BaseRef $BaseRef }
     } else {
-        Invoke-ScriptIfPresent -StepName "docs-sync" -ScriptName "check-project-docs.ps1" -Args @("-ProjectRoot", $root, "-BaseRef", $BaseRef) -GlobalFallback
+        Invoke-ScriptIfPresent -StepName "docs-sync" -ScriptName "check-project-docs.ps1" -Parameters @{ ProjectRoot = $root; BaseRef = $BaseRef } -GlobalFallback
     }
     Invoke-ScriptIfPresent -StepName "feature-list" -ScriptName "check-features.ps1"
     Invoke-ScriptIfPresent -StepName "architecture-check" -ScriptName "check-architecture.ps1" -Optional
@@ -159,10 +159,12 @@ function Invoke-DocsGate {
 function Invoke-HarnessGate {
     Invoke-ScriptIfPresent -StepName "harness-verify" -ScriptName "verify-harness.ps1"
     Invoke-ScriptIfPresent -StepName "project-harness-audit" -ScriptName "audit-project-harness.ps1" -GlobalFallback
+    Invoke-ScriptIfPresent -StepName "context-budget-audit" -ScriptName "audit-context-budget.ps1"
+    Invoke-ScriptIfPresent -StepName "component-registry-audit" -ScriptName "audit-harness-components.ps1"
     Invoke-ScriptIfPresent -StepName "feature-list" -ScriptName "check-features.ps1"
     Invoke-ScriptIfPresent -StepName "tool-evals" -ScriptName "check-tool-evals.ps1"
     Invoke-ScriptIfPresent -StepName "architecture-check" -ScriptName "check-architecture.ps1" -Optional
-    Invoke-ScriptIfPresent -StepName "trace-evals-dry-run" -ScriptName "run-codex-trace-evals.ps1" -Args @("-DryRun") -Optional
+    Invoke-ScriptIfPresent -StepName "trace-evals-dry-run" -ScriptName "run-codex-trace-evals.ps1" -Parameters @{ DryRun = $true } -Optional
 }
 
 try {
@@ -174,20 +176,20 @@ try {
             Invoke-HarnessGate
         }
         "Runtime" {
-            $args = @("-Runtime", "-Smoke", "-TraceEvals")
-            if ($SkipLint) { $args += "-SkipLint" }
-            if ($SkipBuild) { $args += "-SkipBuild" }
-            if ($SkipCargo) { $args += "-SkipCargo" }
-            if ($ContinueOnError) { $args += "-ContinueOnError" }
-            Invoke-ScriptIfPresent -StepName "check-all-runtime" -ScriptName "check-all.ps1" -Args $args
+            $parameters = @{ Runtime = $true; Smoke = $true; TraceEvals = $true }
+            if ($SkipLint) { $parameters.SkipLint = $true }
+            if ($SkipBuild) { $parameters.SkipBuild = $true }
+            if ($SkipCargo) { $parameters.SkipCargo = $true }
+            if ($ContinueOnError) { $parameters.ContinueOnError = $true }
+            Invoke-ScriptIfPresent -StepName "check-all-runtime" -ScriptName "check-all.ps1" -Parameters $parameters
         }
         "Full" {
-            $args = @("-Full")
-            if ($SkipLint) { $args += "-SkipLint" }
-            if ($SkipBuild) { $args += "-SkipBuild" }
-            if ($SkipCargo) { $args += "-SkipCargo" }
-            if ($ContinueOnError) { $args += "-ContinueOnError" }
-            Invoke-ScriptIfPresent -StepName "check-all-full" -ScriptName "check-all.ps1" -Args $args
+            $parameters = @{ Full = $true }
+            if ($SkipLint) { $parameters.SkipLint = $true }
+            if ($SkipBuild) { $parameters.SkipBuild = $true }
+            if ($SkipCargo) { $parameters.SkipCargo = $true }
+            if ($ContinueOnError) { $parameters.ContinueOnError = $true }
+            Invoke-ScriptIfPresent -StepName "check-all-full" -ScriptName "check-all.ps1" -Parameters $parameters
         }
         "BeforeCommit" {
             Invoke-DocsGate

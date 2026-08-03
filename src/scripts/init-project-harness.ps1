@@ -86,11 +86,14 @@ Read in order when present:
 15. `docs/trace-evals.md`
 16. `docs/tool-failures.md`
 17. `docs/skill-surface.md`
-18. `docs/features.json`
-19. `docs/quality.md`
-20. `docs/reliability.md`
-21. `docs/security.md`
-22. `docs/tech-debt.md`
+18. `docs/context-budget.md`
+19. `docs/job-state.md`
+20. `docs/component-evolution.md`
+21. `docs/features.json`
+22. `docs/quality.md`
+23. `docs/reliability.md`
+24. `docs/security.md`
+25. `docs/tech-debt.md`
 
 ## Commands
 
@@ -117,11 +120,19 @@ See `docs/testing.md`.
 - Use `scripts/summarize-trace-evals.ps1` to compare repeated trace eval runs.
 - Use `scripts/new-tool-failure.ps1` when tool failures affect a task or repeat.
 - Use `scripts/audit-skill-surface.ps1` for read-only skill surface stocktakes.
+- Use `scripts/audit-context-budget.ps1` before growing root instructions or
+  long-lived skills.
 - Use `scripts/new-session-summary.ps1` before handoff or context compaction.
 - Use `artifacts/templates/agent-task.md` and `scripts/new-agent-run.ps1` for
   delegated worker tasks.
+- Use `scripts/new-job-state.ps1` to mirror native Goal, subagent, worktree,
+  scheduled, event-driven, or manual work into resumable state records.
+- Use `scripts/invoke-verification-envelope.ps1` when a check needs source,
+  test, grader, environment, and protected-path hashes.
 - Use `scripts/new-learning-intake.ps1` for repeated lessons before deciding
   whether to update docs, evals, skills, rules, or scripts.
+- Use `scripts/audit-harness-components.ps1` and bounded ablation records before
+  adding, duplicating, or retiring harness components.
 - Reproduce feature bugs when feasible, then rerun the reproduction path after
   fixing.
 - Never permanently delete files by default. Use `scripts/safe-remove.ps1` or
@@ -881,6 +892,7 @@ $files = @(
     @{ Path = "CONTEXT.md"; Content = $context },
     @{ Path = "MEMORY.md"; Content = $memory },
     @{ Path = "harness.capabilities.json"; Content = (Get-TemplateContent -RelativePath "harness.capabilities.json" -Fallback "{}") },
+    @{ Path = "harness.components.json"; Content = (Get-TemplateContent -RelativePath "harness.components.json" -Fallback "{`"schema`":`"codex-project-harness-components-v1`",`"components`":[]}") },
     @{ Path = "docs\project.md"; Content = (Get-TemplateContent -RelativePath "project.md" -Fallback $projectDoc) },
     @{ Path = "docs\architecture.md"; Content = (Get-TemplateContent -RelativePath "architecture.md" -Fallback $architecture) },
     @{ Path = "docs\code-map.md"; Content = (Get-TemplateContent -RelativePath "code-map.md" -Fallback $codeMap) },
@@ -904,6 +916,9 @@ $files = @(
     @{ Path = "docs\trace-evals.md"; Content = (Get-TemplateContent -RelativePath "trace-evals.md" -Fallback "# Trace Eval Trends`r`n") },
     @{ Path = "docs\tool-failures.md"; Content = (Get-TemplateContent -RelativePath "tool-failures.md" -Fallback "# Tool Failures`r`n") },
     @{ Path = "docs\skill-surface.md"; Content = (Get-TemplateContent -RelativePath "skill-surface.md" -Fallback "# Skill Surface`r`n") },
+    @{ Path = "docs\context-budget.md"; Content = (Get-TemplateContent -RelativePath "context-budget.md" -Fallback "# Context Budget`r`n") },
+    @{ Path = "docs\job-state.md"; Content = (Get-TemplateContent -RelativePath "job-state.md" -Fallback "# Job State`r`n") },
+    @{ Path = "docs\component-evolution.md"; Content = (Get-TemplateContent -RelativePath "component-evolution.md" -Fallback "# Component Evolution`r`n") },
     @{ Path = "evals\README.md"; Content = (Get-TemplateContent -RelativePath "evals\README.md" -Fallback $evalReadme) },
     @{ Path = "evals\prompts.csv"; Content = (Get-TemplateContent -RelativePath "evals\prompts.csv" -Fallback $evalPrompts) },
     @{ Path = "evals\tool-evals\README.md"; Content = (Get-TemplateContent -RelativePath "evals\tool-evals\README.md" -Fallback "# Tool Evals`r`n") },
@@ -927,12 +942,17 @@ $files = @(
     @{ Path = "scripts\new-trace-eval.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-trace-eval.ps1" -Fallback "") },
     @{ Path = "scripts\new-session-summary.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-session-summary.ps1" -Fallback "") },
     @{ Path = "scripts\new-agent-run.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-agent-run.ps1" -Fallback "") },
+    @{ Path = "scripts\new-job-state.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-job-state.ps1" -Fallback "") },
     @{ Path = "scripts\new-learning-intake.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-learning-intake.ps1" -Fallback "") },
     @{ Path = "scripts\new-runtime-run.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-runtime-run.ps1" -Fallback "") },
     @{ Path = "scripts\invoke-verification-gate.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\invoke-verification-gate.ps1" -Fallback "") },
+    @{ Path = "scripts\invoke-verification-envelope.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\invoke-verification-envelope.ps1" -Fallback "") },
     @{ Path = "scripts\summarize-trace-evals.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\summarize-trace-evals.ps1" -Fallback "") },
     @{ Path = "scripts\new-tool-failure.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-tool-failure.ps1" -Fallback "") },
     @{ Path = "scripts\audit-skill-surface.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\audit-skill-surface.ps1" -Fallback "") },
+    @{ Path = "scripts\audit-context-budget.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\audit-context-budget.ps1" -Fallback "") },
+    @{ Path = "scripts\audit-harness-components.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\audit-harness-components.ps1" -Fallback "") },
+    @{ Path = "scripts\new-ablation-run.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-ablation-run.ps1" -Fallback "") },
     @{ Path = "scripts\new-review.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-review.ps1" -Fallback "") },
     @{ Path = "scripts\new-run.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-run.ps1" -Fallback "") },
     @{ Path = "scripts\new-smoke-run.ps1"; Content = (Get-TemplateContent -RelativePath "scripts\new-smoke-run.ps1" -Fallback $newSmokeRun) },
@@ -953,6 +973,31 @@ foreach ($f in $files) {
     if (New-FileIfMissing -Path $path -Content $content) {
         $created.Add($relativePath)
     }
+}
+
+foreach ($relativeDirectory in @(
+    "artifacts\goals",
+    "artifacts\harness-changes",
+    "artifacts\runs",
+    "artifacts\checks",
+    "artifacts\tool-eval-checks",
+    "artifacts\smoke-runs",
+    "artifacts\runtime-runs",
+    "artifacts\verification-gates",
+    "artifacts\verification-envelopes",
+    "artifacts\tool-failures",
+    "artifacts\trace-eval-summaries",
+    "artifacts\skill-surface",
+    "artifacts\context-budget",
+    "artifacts\component-audits",
+    "artifacts\ablation-runs",
+    "artifacts\reviews",
+    "artifacts\session-summaries",
+    "artifacts\agent-runs",
+    "artifacts\job-states",
+    "artifacts\learning-inbox"
+)) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $resolvedRoot $relativeDirectory) | Out-Null
 }
 
 $testingPath = Join-Path $resolvedRoot "docs\testing.md"
