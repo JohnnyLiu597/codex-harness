@@ -1,0 +1,4 @@
+interface:
+  display_name: "Article Source Resolver"
+  short_description: "Resolve article text, citations, and evidence quality"
+  default_prompt: "Resolve this article or saved page, grade source completeness, extract citations, and distinguish full text from snippets or blocked pages."

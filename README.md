@@ -69,6 +69,11 @@ the package, and syncing source back to the runtime.
 - Loop admission guidance for recurring, event-driven, cross-session, or
   parallel Codex work.
 - Deterministic harness evals and trace-eval plumbing.
+- Global public-URL intake with deterministic acquisition, MIME/signature
+  detection, intent-aware routing, render-state checks, and browser/document/
+  data/media handoff.
+- Article-specific completeness, metadata, image, and citation resolution as a
+  downstream specialization rather than the boundary of web intake.
 - Public-readiness rules that exclude secrets, logs, sessions, caches, browser
   state, plugin downloads, and generated runtime artifacts.
 

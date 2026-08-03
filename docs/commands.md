@@ -75,6 +75,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\har
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\harness-health.ps1" -SkipEvals
 ```
 
+Run the nearest global web source resolver regression:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\test-web-source-resolver.ps1"
+```
+
+Run the article-specific resolver regression:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\test-article-source-resolver.ps1"
+```
+
 ## Git
 
 ```powershell

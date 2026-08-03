@@ -1,0 +1,2 @@
+This is a deterministic plain-text web resource.
+It must use the text route without article assumptions.

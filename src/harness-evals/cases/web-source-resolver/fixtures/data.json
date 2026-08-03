@@ -1,0 +1,5 @@
+{
+  "project": "codex-harness",
+  "status": "active",
+  "features": ["fetch", "classify", "route"]
+}

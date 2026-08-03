@@ -13,6 +13,7 @@ available.
 | Project scripts | Core | Repeatable local checks or records | JSON and markdown artifacts |
 | Git | Conditional | Repo diff, history, commits when asked | branch, status, commit hash |
 | Web or Exa | Research | Current facts, articles, packages, docs | cited sources |
+| Article source resolver | Research | Saved HTML, article completeness, citation extraction, blocked-page diagnosis | evidence grade and structured JSON |
 | Context7 | Research | Library/API docs | cited official docs |
 | Browser or Playwright MCP | Browser runtime | Visual or interaction evidence | snapshots, screenshots, traces |
 | Playwright CLI | Browser runtime | Repeatable E2E checks | test reports and traces |
@@ -28,6 +29,17 @@ available.
   generic harness architecture unless a project actively needs them.
 - Use Browser or Playwright MCP for exploratory UI work; use Playwright CLI for
   repeatable tests.
+- Route public URLs through `web-source-resolver` in every project before
+  choosing a browser or format-specific parser. Use deterministic Web mode for
+  acquisition, resource detection, and render-state classification.
+- Choose the downstream route from both task intent and resource type. Reading,
+  data extraction, UI inspection, interaction, comparison, citation tracing,
+  and download/archive requests may require different tools for the same URL.
+- Route article-like results to `article-source-resolver`; route client shells
+  to Browser, PDFs to the PDF skill, and JSON/XML/feeds/text/CSV/images/media to
+  matching tools. Search snippets remain discovery-only evidence.
+- Do not switch identities, proxies, fingerprints, or browser surfaces after a
+  site-safety block. Request user-exported HTML or PDF instead.
 - Add a new MCP, skill, or script only when repeated work needs it.
 - Turn repeated tool mistakes into `evals/tool-evals/cases/` or a small
   deterministic check.

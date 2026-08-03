@@ -45,6 +45,27 @@ function Copy-FileToRuntime {
     return $true
 }
 
+function Copy-MaintainableDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Target,
+        [string[]]$ExcludeDirectoryNames = @()
+    )
+
+    New-Item -ItemType Directory -Force -Path $Target | Out-Null
+    $sourcePrefix = $Source.TrimEnd('\') + '\'
+    $excludedDirectories = @($ExcludeDirectoryNames) + @("__pycache__")
+    foreach ($file in @(Get-ChildItem -LiteralPath $Source -Recurse -Force -File)) {
+        $relative = $file.FullName.Substring($sourcePrefix.Length)
+        $segments = $relative -split '[\\/]'
+        if (@($segments | Where-Object { $_ -in $excludedDirectories }).Count -gt 0) { continue }
+        if ($file.Extension -in @(".pyc", ".pyo")) { continue }
+        $destination = Join-Path $Target $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+        Copy-Item -LiteralPath $file.FullName -Destination $destination -Force
+    }
+}
+
 function Copy-DirectoryToRuntime {
     param(
         [string]$RelativePath,
@@ -56,11 +77,7 @@ function Copy-DirectoryToRuntime {
     $target = Join-Path $CodexHome $RelativePath
     Assert-InCodexHome -Path $target
     if ($DryRun) { return $true }
-    New-Item -ItemType Directory -Force -Path $target | Out-Null
-    foreach ($item in @(Get-ChildItem -LiteralPath $source -Force)) {
-        if ($item.PSIsContainer -and $item.Name -in $ExcludeDirectoryNames) { continue }
-        Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force
-    }
+    Copy-MaintainableDirectory -Source $source -Target $target -ExcludeDirectoryNames $ExcludeDirectoryNames
     return $true
 }
 

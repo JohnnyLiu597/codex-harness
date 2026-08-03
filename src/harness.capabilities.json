@@ -47,7 +47,9 @@
       "loop-policy",
       "session-summaries",
       "agent-run-records",
-      "learning-intake"
+      "learning-intake",
+      "web-source-resolution",
+      "article-source-resolution"
     ]
   },
   "profiles": {
@@ -65,7 +67,9 @@
     "workflow-entry": "Command-style workflow script for plan, verify, TDD, E2E, review, security, learn, checkpoint, and orchestrate flows.",
     "test-surface-detection": "Project test surface detector that recommends build, typecheck, lint, unit, E2E, smoke, runtime, and harness checks.",
     "coordination": "Session handoff, worker run records, learning intake, and tool-surface discipline for long-running work.",
-    "research": "Current web/docs research through approved search and documentation tools.",
+    "research": "Current web/docs research through approved search and documentation tools with explicit source-completeness evidence.",
+    "web-source-resolution": "Global public-URL intake across projects with deterministic acquisition, MIME/signature classification, intent-aware routing, render-state detection, body fallback, and browser/document/data/media handoff.",
+    "article-source-resolution": "Article-specific evidence grading, authorship, publication metadata, citation extraction, and blocked-page detection after web-source classification.",
     "browser-runtime": "Exploratory browser automation plus repeatable Playwright checks.",
     "github-ops": "Repository, PR, issue, and CI operations when requested.",
     "docs-office": "Document, spreadsheet, and presentation artifact workflows.",
@@ -112,6 +116,25 @@
     "skill_surface": [
       "scripts\\audit-skill-surface.ps1",
       "docs\\skill-surface.md"
+    ],
+    "web_source_resolution": [
+      "AGENTS.md",
+      "docs\\tool-surface.md",
+      "skills\\web-source-resolver\\SKILL.md",
+      "skills\\web-source-resolver\\references\\routing-contract.md",
+      "skills\\web-source-resolver\\scripts\\resolve-web-source.ps1",
+      "agents\\docs-researcher.toml",
+      "harness-evals\\cases\\web-source-resolver\\README.md",
+      "harness-evals\\test-web-source-resolver.ps1"
+    ],
+    "article_source_resolution": [
+      "skills\\article-source-resolver\\SKILL.md",
+      "skills\\article-source-resolver\\references\\evidence-contract.md",
+      "skills\\article-source-resolver\\scripts\\resolve-article-source.ps1",
+      "skills\\article-source-resolver\\scripts\\resolve_article_source.py",
+      "agents\\docs-researcher.toml",
+      "harness-evals\\cases\\article-source-resolver\\README.md",
+      "harness-evals\\test-article-source-resolver.ps1"
     ],
     "codex_workflow_core": [
       "docs\\codex-workflow-core.md",

@@ -17,6 +17,10 @@ published without leaking local state.
 - Project scaffold templates.
 - Deterministic harness evals.
 - Focused active skills.
+- Global intent-aware web source intake for HTML, documentation, client apps,
+  PDFs, JSON/XML/feeds/text/CSV, images, media, and binary resources.
+- Evidence-graded article completeness and citation resolution as a specialized
+  downstream route.
 - Codex sub-agent profiles and workflow-control scripts.
 
 ## Out Of Scope
@@ -41,6 +45,25 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-08-04: Added and forward-tested `web-source-resolver` as the global URL
+  entry in every project. It records deterministic acquisition evidence,
+  classifies resources from declared MIME type, content signatures, and file
+  extensions, distinguishes static pages, documentation, articles, client
+  shells, and blocked responses, then routes by both user intent and resource
+  type. Synthetic checks cover HTML, documentation, JSON, XML feeds, text, PDF,
+  images, network opt-in, and private-network blocking. Live checks covered an
+  ordinary webpage, a public JSON API, a PDF, a public-account article, and an
+  RFC specification.
+- 2026-08-04: Added and forward-tested `article-source-resolver` with classic,
+  structured/SSR, and generic article parsing; a fixed browser-compatible
+  public request profile; raw HTML capture outside source; exact byte hashing;
+  charset and mojibake diagnostics; heading coverage; citation and lazy-image
+  extraction; blocked-page grading; private-network protection; deterministic
+  fixtures; semantic article/main roots; common content IDs/classes;
+  `itemprop=articleBody`; JSON-LD Article bodies; standards documents; and
+  optional cross-site live URL checks. Bare public URLs now default to
+  source-intake. Updated the research agent and harness optimizer so article
+  handling remains one specialized route under the global web layer.
 - 2026-07-02: Added Loop Engineering intake guidance to the harness source so
   project scaffolds now include `docs/loop.md` with L1-L4 diagnosis, L4
   admission, budget, state, maker-checker, and stop-condition rules.

@@ -28,6 +28,27 @@ function Copy-FileIfPresent {
     return $true
 }
 
+function Copy-MaintainableDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Target,
+        [string[]]$ExcludeDirectoryNames = @()
+    )
+
+    New-Item -ItemType Directory -Force -Path $Target | Out-Null
+    $sourcePrefix = $Source.TrimEnd('\') + '\'
+    $excludedDirectories = @($ExcludeDirectoryNames) + @("__pycache__")
+    foreach ($file in @(Get-ChildItem -LiteralPath $Source -Recurse -Force -File)) {
+        $relative = $file.FullName.Substring($sourcePrefix.Length)
+        $segments = $relative -split '[\\/]'
+        if (@($segments | Where-Object { $_ -in $excludedDirectories }).Count -gt 0) { continue }
+        if ($file.Extension -in @(".pyc", ".pyo")) { continue }
+        $destination = Join-Path $Target $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+        Copy-Item -LiteralPath $file.FullName -Destination $destination -Force
+    }
+}
+
 function Copy-DirectoryIfPresent {
     param(
         [string]$RelativePath,
@@ -37,12 +58,7 @@ function Copy-DirectoryIfPresent {
     $source = Join-Path $CodexHome $RelativePath
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { return $false }
     $target = Join-Path $srcRoot $RelativePath
-    New-Item -ItemType Directory -Force -Path $target | Out-Null
-
-    foreach ($item in @(Get-ChildItem -LiteralPath $source -Force)) {
-        if ($item.PSIsContainer -and $item.Name -in $ExcludeDirectoryNames) { continue }
-        Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force
-    }
+    Copy-MaintainableDirectory -Source $source -Target $target -ExcludeDirectoryNames $ExcludeDirectoryNames
     return $true
 }
 
@@ -55,7 +71,7 @@ function Copy-ActiveSkills {
     $count = 0
     foreach ($dir in @(Get-ChildItem -LiteralPath $source -Directory -Force)) {
         if ($dir.Name -in @(".system", "codex-primary-runtime")) { continue }
-        Copy-Item -LiteralPath $dir.FullName -Destination $target -Recurse -Force
+        Copy-MaintainableDirectory -Source $dir.FullName -Target (Join-Path $target $dir.Name)
         $count++
     }
     return $count
@@ -152,6 +168,9 @@ $manifest = [ordered]@{
         "harness-evals/runs",
         "harness-evals/trace-evals/runs",
         "harness-evals/trace-evals/summaries",
+        "__pycache__",
+        "*.pyc",
+        "*.pyo",
         "skills.archived",
         "backup-*"
     )

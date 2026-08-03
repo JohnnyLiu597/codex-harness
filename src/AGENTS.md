@@ -226,6 +226,27 @@ the standard scaffold.
 - If a task depends on a login, paid quota, desktop app state, browser session,
   unavailable file, or user-only permission, pause and report the blocker.
 
+## Global Web Source Intake
+
+- In every project, route a user-supplied public HTTP(S) URL or a request to
+  fetch/read/inspect/analyze/extract/interact with a webpage through
+  `web-source-resolver` first.
+- A message containing only URLs defaults to acquisition and classification;
+  do not ask what the URL is before attempting ordinary public retrieval.
+- Infer whether the user needs reading, structured extraction, UI inspection,
+  interaction, comparison, citation tracing, download, or archival. Do not
+  assume every URL is an article or that static text satisfies an interaction
+  request.
+- Use deterministic Web mode before browser rendering. Route article-like
+  pages to `article-source-resolver`, client shells to Browser, PDFs to the PDF
+  skill, and JSON/XML/feeds/text/CSV/images/media to their matching tools.
+- Preserve status, final URL, declared and detected content type, byte/hash
+  evidence, render state, recommended route, and blockers. Never treat HTTP
+  200 or a loading shell as complete content.
+- Keep fetched pages and generated evidence out of harness source. Do not use
+  another execution surface to evade an explicit policy or access-control
+  denial.
+
 ## Testing And Reproduction
 
 - Codex should test its own work when the project provides enough local tooling.

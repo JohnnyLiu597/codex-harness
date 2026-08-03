@@ -82,6 +82,45 @@ The source payload currently includes:
 - `harness-evals/`
 - `skills/`
 
+## Global Web Source Resolution
+
+`web-source-resolver` is the global URL-intake entry in every project. It first
+infers whether the user needs reading, structured extraction, UI inspection,
+interaction, comparison, citation tracing, download, or archival. A URL-only
+message defaults to acquisition and classification, not article analysis.
+
+The deterministic resolver preserves status, final URL, redirects, declared
+and detected content type, charset, exact byte count, raw SHA-256, and whether
+an environment proxy was present without recording proxy values. It combines
+MIME headers, content signatures, and file extensions to distinguish HTML,
+JSON, XML/feeds, text/CSV, PDF, images/media, archives, and unknown binary
+resources. Each result includes a recommended downstream route.
+
+HTML is classified separately as static, partial, client-rendered, or blocked,
+and as a general webpage, documentation, or article-like page. Static records
+can support reading, extraction, and comparison. Browser is used when rendered
+DOM, canvas, existing login state, or interaction matters. PDF, structured
+data, tabular data, text, and media use their matching workflows.
+
+`article-source-resolver` is the article-specific downstream layer. It adds
+full/partial/blocked evidence grading, authorship and publication metadata,
+body and heading coverage, images, citation links, JSON-LD Article support,
+classic public-account parsing, and structured/SSR fallbacks. It is not the
+generic boundary for arbitrary URLs.
+
+The resolver does not accept cookies, tokens, browser state, proxy pools, or
+account credentials. Redirect and private-network checks remain enforced. Raw
+responses may be saved only to Temp, an ignored artifact directory, or another
+user-selected path; fetched content and generated resolver output never enter
+the source payload.
+
+Synthetic fixtures cover general HTML, documentation, articles, client shells,
+JSON, XML feeds, text, PDF, images, deletion notices, and challenge pages.
+Forward tests cover representative public webpages and resources. Semantic
+stability uses titles, visible-text hashes, content roots, and heading coverage
+rather than raw hash equality alone because public pages may contain dynamic
+nonces or page configuration.
+
 `config.toml` is intentionally not copied. It can contain local provider setup
 or authentication-adjacent details and should remain machine-local unless a
 sanitized template is created later.

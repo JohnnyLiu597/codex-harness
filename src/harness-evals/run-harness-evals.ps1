@@ -83,13 +83,75 @@ Invoke-Eval -Name "optimizer-workflow-routing" -Script {
         "bounded timeouts",
         "partial evidence on timeout",
         "harness-auditor",
-        "regression-miner"
+        "regression-miner",
+        "web-source-resolver",
+        "article-source-resolver",
+        "source-intake",
+        "A message containing only one or more public HTTP(S) URLs defaults to"
     )) {
         if ($skill -notmatch [regex]::Escape($required)) {
             throw "project-harness-optimizer is missing required workflow routing text: $required"
         }
     }
     "project-harness-optimizer actively routes workflow core hooks, agents, workflows, tests, and completion gates"
+}
+
+Invoke-Eval -Name "web-source-resolver" -Script {
+    $skillPath = Join-Path $codexHomePath "skills\web-source-resolver\SKILL.md"
+    $skill = Get-Content -LiteralPath $skillPath -Raw
+    $globalAgents = Get-Content -LiteralPath (Join-Path $codexHomePath "AGENTS.md") -Raw
+    foreach ($required in @(
+        "across all projects",
+        "public HTTP(S) URL",
+        "resolve-web-source.ps1",
+        "client-shell",
+        "article-source-resolver",
+        "PDF",
+        "JSON",
+        "Do not turn every URL into an article-reading task",
+        "user intent, resource kind, and render state",
+        "must not be used to bypass"
+    )) {
+        if ($skill -notmatch [regex]::Escape($required)) {
+            throw "web-source-resolver is missing required global URL guidance: $required"
+        }
+    }
+    foreach ($required in @(
+        "Global Web Source Intake",
+        "web-source-resolver",
+        "In every project",
+        "message containing only URLs defaults",
+        "assume every URL is an article",
+        "declared and detected content type"
+    )) {
+        if ($globalAgents -notmatch [regex]::Escape($required)) {
+            throw "Global AGENTS.md is missing required web source routing: $required"
+        }
+    }
+    & (Join-Path $codexHomePath "harness-evals\test-web-source-resolver.ps1") -CodexHome $codexHomePath | Out-Null
+    "global web source resolver handled intent-aware HTML, structured data, documents, media, client shells, and safety gates"
+}
+
+Invoke-Eval -Name "article-source-resolver" -Script {
+    $skillPath = Join-Path $codexHomePath "skills\article-source-resolver\SKILL.md"
+    $skill = Get-Content -LiteralPath $skillPath -Raw
+    foreach ($required in @(
+        "A-full-page",
+        "C-index-only",
+        "D-blocked",
+        "resolve-article-source.ps1",
+        "must not be used to bypass",
+        "user-exported HTML or PDF",
+        "Do not use as the generic entry point for arbitrary URLs",
+        "web-source-resolver",
+        "JSON-LD Article"
+    )) {
+        if ($skill -notmatch [regex]::Escape($required)) {
+            throw "article-source-resolver is missing required evidence guidance: $required"
+        }
+    }
+    & (Join-Path $codexHomePath "harness-evals\test-article-source-resolver.ps1") -CodexHome $codexHomePath | Out-Null
+    "article source resolver parsed classic, structured, generic main, and JSON-LD fixtures and classified blocked pages"
 }
 
 Invoke-Eval -Name "project-scaffold" -Script {

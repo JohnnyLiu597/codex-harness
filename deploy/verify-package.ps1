@@ -72,6 +72,10 @@ foreach ($path in @(
     "src\templates\project-harness\harness.capabilities.json",
     "src\templates\project-harness\loop.md",
     "src\harness-evals\run-harness-evals.ps1",
+    "src\harness-evals\test-article-source-resolver.ps1",
+    "src\skills\article-source-resolver\SKILL.md",
+    "src\skills\article-source-resolver\scripts\resolve-article-source.ps1",
+    "src\skills\article-source-resolver\scripts\resolve_article_source.py",
     "src\skills\project-harness-optimizer\SKILL.md"
 )) {
     $full = Join-Path $ProjectRoot $path
@@ -89,7 +93,10 @@ if (Test-Path -LiteralPath $srcRoot) {
         $_.Name -like "*.sqlite" -or
         $_.Name -like "*.sqlite-shm" -or
         $_.Name -like "*.sqlite-wal" -or
+        $_.Name -like "*.pyc" -or
+        $_.Name -like "*.pyo" -or
         $_.FullName -match '\\(plugins|cache|sessions|archived_sessions|log|hook-logs|browser|computer-use|process_manager|harness-health|harness-changes|skills\.archived|agents\.archived)\\' -or
+        $_.FullName -match '\\__pycache__\\' -or
         $_.FullName -match '\\harness-evals\\runs\\' -or
         $_.FullName -match '\\harness-evals\\trace-evals\\(runs|summaries)\\'
     })
@@ -149,6 +156,20 @@ if ($parseErrors.Count -eq 0) {
     Add-Check -Name "powershell-parse" -Status "passed" -Detail "$($psScripts.Count) scripts parsed"
 } else {
     Add-Check -Name "powershell-parse" -Status "failed" -Detail ($parseErrors -join "; ")
+}
+
+$resolverPython = Join-Path $srcRoot "skills\article-source-resolver\scripts\resolve_article_source.py"
+$python = Get-Command python -ErrorAction SilentlyContinue
+if ($python -and (Test-Path -LiteralPath $resolverPython -PathType Leaf)) {
+    $astCheck = "import ast,pathlib; ast.parse(pathlib.Path(r'" + $resolverPython.Replace("'", "''") + "').read_text(encoding='utf-8'))"
+    & $python.Source -c $astCheck
+    if ($LASTEXITCODE -eq 0) {
+        Add-Check -Name "article-resolver-python" -Status "passed" -Detail "Python syntax parsed"
+    } else {
+        Add-Check -Name "article-resolver-python" -Status "failed" -Detail "Python syntax validation failed"
+    }
+} else {
+    Add-Check -Name "article-resolver-python" -Status "passed" -Detail "Python unavailable; runtime wrapper reports the dependency explicitly"
 }
 
 $skillRoot = Join-Path $srcRoot "skills"

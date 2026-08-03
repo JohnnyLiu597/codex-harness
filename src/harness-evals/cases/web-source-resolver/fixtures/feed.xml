@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Harness Updates</title>
+    <item>
+      <title>General web intake</title>
+      <link>https://example.test/updates/general-web-intake</link>
+    </item>
+  </channel>
+</rss>

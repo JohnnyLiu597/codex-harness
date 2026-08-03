@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Source Resolver"
+  short_description: "Fetch and route any public URL by task intent"
+  default_prompt: "Fetch this public URL, preserve acquisition evidence, classify its resource and render state, infer the user's actual intent, and choose the appropriate parser, document, media, or browser workflow without assuming it is an article."

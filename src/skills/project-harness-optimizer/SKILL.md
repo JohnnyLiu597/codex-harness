@@ -48,7 +48,9 @@ Lives under `$env:USERPROFILE\.codex` and defines personal defaults:
 - `harness-evals/`: deterministic regression checks for the global harness.
 - `harness-evals/trace-evals/`: real-task prompt regressions for repeated
   Codex harness misses.
-- `skills/`: active Codex skills, kept focused and on-demand.
+- `skills/`: active Codex skills, kept focused and on-demand. Use
+  `web-source-resolver` as the global URL-intake entry in every project, then
+  `article-source-resolver` for article-specific completeness and citations.
 - `agents/`: Codex sub-agent profiles for planner, architect, tester,
   e2e-runner, build-error-resolver, security-reviewer, doc-updater,
   harness-auditor, regression-miner, refactor-cleaner, explorer, reviewer, and
@@ -102,6 +104,10 @@ or more concrete routes:
   cross-session state, budgeted workers, worktree isolation, maker-checker
   separation, or unattended Codex runs.
 - `learning`: repeated miss, flaky tool, drift, missing eval, or durable lesson.
+- `source-intake`: arbitrary public URLs, webpages, saved responses, reading,
+  structured extraction, UI inspection, interaction, comparison, download,
+  article/citation work, render-state classification, source completeness, or
+  blocked-page evidence.
 - `sync`: runtime/source drift, publish readiness, forbidden-file scanning, or
   package verification.
 
@@ -136,6 +142,7 @@ If there is no evidence surface, the work is not complete yet.
 | "Testing loop", verification, CI-style checks | `detect-project-test-surface.ps1`, `invoke-codex-workflow.ps1 -Workflow verify`, `tester` | workflow artifact, verification gate, package/runtime checks |
 | TDD or bugfix with reproducible behavior | `invoke-codex-workflow.ps1 -Workflow tdd`, `tester`, `regression-miner` | failing/passing check or runtime-run/eval |
 | Browser/UI/runtime behavior | `e2e-runner`, Browser/Playwright, `new-runtime-run.ps1` | safe screenshots/log paths, runtime-run |
+| Any public URL, webpage, saved response, article, or blocked page | `web-source-resolver`, then the intent- and format-specific parser/browser route; use `article-source-resolver` only for article-like pages | acquisition record, resource/render classification, selected route, evidence grade, and task-specific result |
 | Loop automation, recurring work, cross-session goals, or parallel workers | `docs/loop.md`, `new-goal.ps1`, `new-agent-run.ps1`, `harness-orchestrator` only when complex | loop admission notes, state file, worker/review records, budget and stop conditions |
 | Build/type/lint failure | `build-error-resolver` | failing command then passing command |
 | Security/auth/secret/input change | `security-reviewer`, `docs/auth.md`, security docs/checks | redacted findings and checks |
@@ -160,6 +167,19 @@ Use these recipes before inventing new process:
   input, permissions, or sensitive data.
 - `learn`: send repeated misses to learning intake, trace eval, tool eval, docs,
   skill, rule, or script. Do not turn one-off feedback into broad machinery.
+- `source-intake`: for any user-supplied public URL, run deterministic
+  `web-source-resolver` first when terminal network access is permitted.
+  Infer whether the user needs reading, extraction, UI inspection, interaction,
+  comparison, citation tracing, download, or archival. Classify declared and
+  detected content type plus render state, then choose the route from both
+  intent and resource: article-like pages to `article-source-resolver`, client
+  shells or interaction tasks to Browser, PDFs to the PDF skill, and structured
+  or media responses to matching tools. Require evidence before analysis. Do
+  not rotate identities or execution surfaces after an explicit platform
+  policy or access-control denial.
+- A message containing only one or more public HTTP(S) URLs defaults to
+  `source-intake`. Fetch and classify each URL, report the evidence grade,
+  resource/page type, and useful next routes without assuming it is an article.
 - `checkpoint`: use session summaries, agent-run records, or harness-change
   records before long handoff or after substantial harness changes.
 - `loop`: classify the issue as L1 prompt, L2 context, L3 harness, or L4 loop;
@@ -717,6 +737,17 @@ Classify it as:
 
 Default stance:
 
+- Run every public URL or webpage input through `web-source-resolver` before
+  using it as evidence in any project. Record user intent, resource kind,
+  declared/detected media type, render state, selected route, and whether the
+  source is full, partial, index-only, blocked, or unknown. Apply
+  `article-source-resolver` only after article-like classification.
+- For public URL-only intake, preserve the raw-byte hash outside source and
+  check charset, replacement characters, recognized body markers, content
+  length, and first/last headings. A large HTTP 200 response is not sufficient
+  evidence by itself.
+- Treat user-exported HTML or PDF as the fallback when a site is visible to the
+  user but blocked to Codex. Do not store raw pages in harness source.
 - External methodology patterns may be selectively adapted into existing
   skills.
 - External agent runtimes should not be installed into this Codex-only harness
@@ -763,6 +794,10 @@ After edits, verify the exact layer touched:
   `~\.codex\scripts\verify-global-harness.ps1`
 - global regression:
   `~\.codex\harness-evals\run-harness-evals.ps1`
+- article source resolver:
+  `~\.codex\harness-evals\test-article-source-resolver.ps1`
+- global web source resolver:
+  `~\.codex\harness-evals\test-web-source-resolver.ps1`
 - codex-harness source release:
   `deploy\verify-release.ps1 -Level Fast|Standard|Full`
 - project onboarding:

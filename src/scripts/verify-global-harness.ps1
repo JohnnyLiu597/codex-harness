@@ -137,8 +137,37 @@ $required = @(
     "harness-evals\cases\hook-privacy\README.md",
     "harness-evals\cases\maturity-layer\README.md",
     "harness-evals\cases\optimizer-workflow-routing\README.md",
+    "harness-evals\cases\article-source-resolver\README.md",
+    "harness-evals\cases\article-source-resolver\fixtures\classic.html",
+    "harness-evals\cases\article-source-resolver\fixtures\classic-utf8.html",
+    "harness-evals\cases\article-source-resolver\fixtures\ssr.html",
+    "harness-evals\cases\article-source-resolver\fixtures\generic.html",
+    "harness-evals\cases\article-source-resolver\fixtures\generic-main.html",
+    "harness-evals\cases\article-source-resolver\fixtures\jsonld.html",
+    "harness-evals\cases\article-source-resolver\fixtures\deleted.html",
+    "harness-evals\cases\article-source-resolver\fixtures\challenge.html",
+    "harness-evals\cases\web-source-resolver\README.md",
+    "harness-evals\cases\web-source-resolver\fixtures\web-body.html",
+    "harness-evals\cases\web-source-resolver\fixtures\client-shell.html",
+    "harness-evals\cases\web-source-resolver\fixtures\documentation.html",
+    "harness-evals\cases\web-source-resolver\fixtures\data.json",
+    "harness-evals\cases\web-source-resolver\fixtures\feed.xml",
+    "harness-evals\cases\web-source-resolver\fixtures\notes.txt",
+    "harness-evals\cases\web-source-resolver\fixtures\tiny.pdf",
     "harness-evals\cases\safe-remove\README.md",
     "harness-evals\cases\smoke-record\README.md",
+    "harness-evals\test-article-source-resolver.ps1",
+    "harness-evals\test-web-source-resolver.ps1",
+    "skills\project-harness-optimizer\SKILL.md",
+    "skills\web-source-resolver\SKILL.md",
+    "skills\web-source-resolver\agents\openai.yaml",
+    "skills\web-source-resolver\references\routing-contract.md",
+    "skills\web-source-resolver\scripts\resolve-web-source.ps1",
+    "skills\article-source-resolver\SKILL.md",
+    "skills\article-source-resolver\agents\openai.yaml",
+    "skills\article-source-resolver\references\evidence-contract.md",
+    "skills\article-source-resolver\scripts\resolve-article-source.ps1",
+    "skills\article-source-resolver\scripts\resolve_article_source.py",
     "agents\explorer.toml",
     "agents\reviewer.toml",
     "agents\docs-researcher.toml",
@@ -240,7 +269,11 @@ foreach ($scriptPath in @(
     "scripts\safe-remove.ps1",
     "scripts\verify-global-harness.ps1",
     "scripts\harness-health.ps1",
+    "skills\article-source-resolver\scripts\resolve-article-source.ps1",
+    "skills\web-source-resolver\scripts\resolve-web-source.ps1",
     "harness-evals\run-harness-evals.ps1",
+    "harness-evals\test-article-source-resolver.ps1",
+    "harness-evals\test-web-source-resolver.ps1",
     "harness-evals\run-trace-evals.ps1",
     "harness-evals\grade-trace-evals.ps1",
     "templates\project-harness\scripts\audit-worktree.ps1",
@@ -286,6 +319,15 @@ foreach ($scriptPath in @(
     if ($errors.Count -gt 0) {
         $messages = $errors | ForEach-Object { $_.Message }
         throw "$scriptPath syntax errors: $($messages -join '; ')"
+    }
+}
+
+if ($python) {
+    $resolverPython = Join-Path $codexHomePath "skills\article-source-resolver\scripts\resolve_article_source.py"
+    $astCheck = "import ast,pathlib; ast.parse(pathlib.Path(r'" + $resolverPython.Replace("'", "''") + "').read_text(encoding='utf-8'))"
+    & $python.Source -c $astCheck
+    if ($LASTEXITCODE -ne 0) {
+        throw "Article source resolver Python syntax validation failed."
     }
 }
 

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="author" content="示例作者">
+  <title>备用页面标题</title>
+</head>
+<body>
+  <div id="js_article">
+    <h1 id="js_title_inner">UTF-8 文章采集验证</h1>
+    <span id="publish_time">2026-08-04</span>
+    <div id="js_content">
+      <h2>采集证据</h2>
+      <p>这是一段完全合成的测试正文，用来确认解析器能够按 UTF-8 读取中文标题、作者和正文，不会把有效文字解码成乱码，也不会只因为响应文件较大就误判为完整文章。</p>
+      <h2>闭环检查</h2>
+      <p>解析结果还应记录原始字节哈希、正文哈希、段落数量、标题数量以及首尾标题。这样后续智能体可以验证页面结构和章节覆盖，再决定是否把内容用于研究、引用追踪或 harness 升级。</p>
+    </div>
+  </div>
+</body>
+</html>
