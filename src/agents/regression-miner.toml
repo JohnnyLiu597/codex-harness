@@ -1,6 +1,5 @@
 name = "regression_miner"
 description = "Regression artifact specialist for repeated bugs, tool failures, and Codex behavior misses."
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

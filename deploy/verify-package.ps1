@@ -49,6 +49,7 @@ foreach ($path in @(
     "deploy\sync-from-runtime.ps1",
     "deploy\sync-to-runtime.ps1",
     "deploy\test-sync-boundaries.ps1",
+    "deploy\test-transactional-release.ps1",
     "deploy\verify-release.ps1",
     "deploy\verify-package.ps1"
 )) {
@@ -72,11 +73,13 @@ foreach ($path in @(
     "src\scripts\verify-global-harness.ps1",
     "src\scripts\codex-hook.ps1",
     "src\scripts\codex-hook-router.ps1",
+    "src\scripts\invoke-verification-gate.ps1",
     "src\scripts\invoke-verification-envelope.ps1",
     "src\scripts\audit-context-budget.ps1",
     "src\scripts\audit-harness-components.ps1",
     "src\scripts\new-job-state.ps1",
     "src\scripts\new-ablation-run.ps1",
+    "src\scripts\invoke-weekly-harness-learning.ps1",
     "src\scripts\harness-health.ps1",
     "src\scripts\audit-skill-surface.ps1",
     "src\templates\project-harness\harness.capabilities.json",
@@ -86,13 +89,19 @@ foreach ($path in @(
     "src\templates\project-harness\component-evolution.md",
     "src\templates\project-harness\loop.md",
     "src\harness-evals\run-harness-evals.ps1",
+    "src\harness-evals\test-trace-evals-v3.ps1",
+    "src\harness-evals\test-verification-gate.ps1",
     "src\harness-evals\test-verification-envelope.ps1",
     "src\harness-evals\test-project-harness-optimizer.ps1",
+    "src\harness-evals\test-weekly-harness-learning.ps1",
     "src\harness-evals\test-article-source-resolver.ps1",
     "src\skills\article-source-resolver\SKILL.md",
     "src\skills\article-source-resolver\scripts\resolve-article-source.ps1",
     "src\skills\article-source-resolver\scripts\resolve_article_source.py",
-    "src\skills\project-harness-optimizer\SKILL.md"
+    "src\skills\project-harness-optimizer\SKILL.md",
+    "src\skills\harness-orchestrator\SKILL.md",
+    "src\skills\harness-orchestrator\references\workflow-graph-contract.md",
+    "src\docs\weekly-learning.md"
 )) {
     $full = Join-Path $ProjectRoot $path
     if (Test-Path -LiteralPath $full) {
@@ -112,7 +121,7 @@ if (Test-Path -LiteralPath $srcRoot) {
         $_.Name -eq ".codex-private" -or
         $_.Name -match '(?i)\.bak(?:[-.].*)?$|\.backup(?:[-.].*)?$|~$' -or
         $_.Name -eq ".sync-manifest.json" -or
-        $_.FullName -match '\\(plugins?|caches?|sessions?|archived_sessions|logs?|hook-logs|browser(?:[ ._-]?state)?|computer-use|process_manager|harness-health|harness-changes|skills\.archived|agents\.archived|backups?|backup-[^\\]+)\\' -or
+        $_.FullName -match '\\(plugins?|caches?|sessions?|archived_sessions|logs?|hook-logs|browser(?:[ ._-]?state)?|computer-use|process_manager|harness-health|harness-changes|harness-learning|skills\.archived|agents\.archived|backups?|backup-[^\\]+|\.sandbox(?:-bin|-secrets)?|\.tmp|tmp)\\' -or
         $_.FullName -match '\\scripts\\archived\\' -or
         $_.FullName -match '\\__pycache__\\' -or
         $_.FullName -match '\\harness-evals\\runs\\' -or
@@ -125,10 +134,24 @@ if (Test-Path -LiteralPath $srcRoot) {
     }
 }
 
-$automationTemplatePath = Join-Path $srcRoot "automations\harness\automation.toml.template"
+$automationRoot = Join-Path $srcRoot "automations"
+$automationTemplatePath = Join-Path $automationRoot "harness\automation.toml.template"
+if (Test-Path -LiteralPath $automationRoot -PathType Container) {
+    $automationRootFull = (Get-Item -LiteralPath $automationRoot).FullName.TrimEnd('\') + '\'
+    $unexpectedAutomationFiles = @(Get-ChildItem -LiteralPath $automationRoot -Recurse -Force -File | Where-Object {
+        $relative = $_.FullName.Substring($automationRootFull.Length).Replace('/', '\')
+        $relative -ne 'harness\automation.toml.template'
+    })
+    if ($unexpectedAutomationFiles.Count -eq 0) {
+        Add-Check -Name "automation-source-allowlist" -Status "passed" -Detail "only the public automation template is present"
+    } else {
+        Add-Check -Name "automation-source-allowlist" -Status "failed" -Detail (($unexpectedAutomationFiles | Select-Object -First 20 -ExpandProperty FullName) -join "; ")
+    }
+}
+
 if (Test-Path -LiteralPath $automationTemplatePath) {
     $template = Get-Content -LiteralPath $automationTemplatePath -Raw
-    $missingPlaceholders = @("__CODEX_HOME_TOML_CONTENT__", "__PROJECT_ROOT_TOML_STRING__", "__MODEL_TOML_STRING__", "__NOW_MS__") | Where-Object {
+    $missingPlaceholders = @("__CODEX_HOME_TOML_CONTENT__", "__PROJECT_ROOT_TOML_STRING__", "__NOW_MS__") | Where-Object {
         $template -notmatch [regex]::Escape($_)
     }
     if ($missingPlaceholders.Count -eq 0) {
@@ -141,6 +164,49 @@ if (Test-Path -LiteralPath $automationTemplatePath) {
         Add-Check -Name "automation-template-public-readiness" -Status "failed" -Detail "template contains personal, machine-local, or secret-like content"
     } else {
         Add-Check -Name "automation-template-public-readiness" -Status "passed" -Detail "no machine-local path or secret-like field"
+    }
+
+    if ($template -match '(?m)^\s*(model|model_reasoning_effort|reasoning_effort)\s*=') {
+        Add-Check -Name "automation-template-adaptive-capability" -Status "failed" -Detail "template pins model or reasoning effort"
+    } elseif ($template -notmatch '(?m)^\s*execution_environment\s*=\s*"worktree"\s*$') {
+        Add-Check -Name "automation-template-adaptive-capability" -Status "failed" -Detail "template does not use worktree isolation"
+    } else {
+        Add-Check -Name "automation-template-adaptive-capability" -Status "passed" -Detail "model and reasoning use app defaults under worktree isolation"
+    }
+
+    $missingLearningTerms = @(
+        "Your first operation must be",
+        "invoke-weekly-harness-learning.ps1",
+        "temporary_input_prefix",
+        "Do not run ordinary shell commands",
+        "list_threads",
+        "read_thread",
+        "includeOutputs=false",
+        "turnLimit=10",
+        "untrusted data",
+        "official OpenAI sources",
+        "Edit zero maintainable harness or source files",
+        "completion script deletes it after parsing",
+        "Do not alter config, auth, hooks, agents, rules, scripts, skills, templates, manifests, deployment code, repositories, or business projects",
+        "Do not delete, commit, push, release, publish, or sync"
+    ) | Where-Object { $template -notmatch [regex]::Escape($_) }
+    if ($missingLearningTerms.Count -eq 0) {
+        Add-Check -Name "automation-template-weekly-learning" -Status "passed" -Detail "bounded learning, research, privacy, and publish boundaries present"
+    } else {
+        Add-Check -Name "automation-template-weekly-learning" -Status "failed" -Detail ($missingLearningTerms -join ", ")
+    }
+}
+
+$weeklyLearningScriptPath = Join-Path $srcRoot "scripts\invoke-weekly-harness-learning.ps1"
+if (Test-Path -LiteralPath $weeklyLearningScriptPath -PathType Leaf) {
+    $weeklyLearningScript = Get-Content -LiteralPath $weeklyLearningScriptPath -Raw -Encoding UTF8
+    $legacyControls = @('ApprovedMaintenance', 'SyncSource', 'SourceProjectRoot', 'SkipVerification') | Where-Object {
+        $weeklyLearningScript -match ('(?m)^\s*\[(?:switch|string)\]\$' + [regex]::Escape($_) + '\b')
+    }
+    if ($legacyControls.Count -eq 0) {
+        Add-Check -Name "weekly-learning-proposal-only-interface" -Status "passed" -Detail "no maintenance, verification-skip, or source-sync parameters"
+    } else {
+        Add-Check -Name "weekly-learning-proposal-only-interface" -Status "failed" -Detail ($legacyControls -join ', ')
     }
 }
 
@@ -186,6 +252,9 @@ if (Test-Path -LiteralPath $agentRoot -PathType Container) {
             $agentIssues.Add("$($agentFile.Name): missing name, description, or developer_instructions") | Out-Null
             continue
         }
+        if ($agentConfig -match '(?m)^\s*(model|model_reasoning_effort|reasoning_effort)\s*=') {
+            $agentIssues.Add("$($agentFile.Name): reusable role pins model or reasoning effort") | Out-Null
+        }
         $agentName = $nameMatch.Groups[1].Value
         $expectedName = [System.IO.Path]::GetFileNameWithoutExtension($agentFile.Name).Replace("-", "_")
         if ($agentName -ne $expectedName) {
@@ -202,8 +271,48 @@ if (Test-Path -LiteralPath $agentRoot -PathType Container) {
     }
 }
 
+$globalVerifierPath = Join-Path $ProjectRoot 'src\scripts\verify-global-harness.ps1'
+$evalRunnerPath = Join-Path $ProjectRoot 'src\harness-evals\run-harness-evals.ps1'
+if ((Test-Path -LiteralPath $globalVerifierPath -PathType Leaf) -and
+    (Test-Path -LiteralPath $evalRunnerPath -PathType Leaf)) {
+    $globalVerifierContent = Get-Content -LiteralPath $globalVerifierPath -Raw -Encoding UTF8
+    $evalRunnerContent = Get-Content -LiteralPath $evalRunnerPath -Raw -Encoding UTF8
+    if ($globalVerifierContent -match '(?m)^\s*&\s+.*(?:test-[A-Za-z0-9_-]+\.ps1|run-harness-evals\.ps1)') {
+        Add-Check -Name 'verification-ownership' -Status 'failed' -Detail 'global verifier executes deterministic behavior tests'
+    } elseif (@(
+        'test-codex-workflow-core.ps1',
+        'test-verification-gate.ps1',
+        'test-verification-envelope.ps1',
+        'test-trace-evals-v3.ps1',
+        'test-weekly-harness-learning.ps1'
+    ) | Where-Object { $evalRunnerContent -notmatch [regex]::Escape($_) }) {
+        Add-Check -Name 'verification-ownership' -Status 'failed' -Detail 'deterministic eval runner is missing one or more workflow-core regression owners'
+    } else {
+        Add-Check -Name 'verification-ownership' -Status 'passed' -Detail 'global verifier owns static/runtime health and eval runner owns deterministic behavior cases'
+    }
+}
+
+foreach ($relative in @(
+    'src\harness-evals\run-trace-evals.ps1',
+    'src\templates\project-harness\scripts\run-codex-trace-evals.ps1',
+    'src\scripts\init-project-harness.ps1',
+    'src\scripts\verify-global-harness.ps1'
+)) {
+    $path = Join-Path $ProjectRoot $relative
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+    $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    if ($content -match [regex]::Escape("OpenAI\Codex\bin\codex.exe") -and
+        $content -match 'Resolve-CodexCommand' -and
+        $content -match 'Get-Command\s+codex\s+-All' -and
+        $content -match '--version') {
+        Add-Check -Name ("codex-cli-resolution:" + $relative) -Status "passed" -Detail "executable candidate is probed before use"
+    } else {
+        Add-Check -Name ("codex-cli-resolution:" + $relative) -Status "failed" -Detail "missing executable fallback or --version probe"
+    }
+}
+
 $psScripts = @()
-foreach ($dir in @("deploy", "src\scripts", "src\harness-evals")) {
+foreach ($dir in @("deploy", "src")) {
     $full = Join-Path $ProjectRoot $dir
     if (Test-Path -LiteralPath $full) {
         $psScripts += @(Get-ChildItem -LiteralPath $full -Recurse -File -Filter "*.ps1" -ErrorAction SilentlyContinue)

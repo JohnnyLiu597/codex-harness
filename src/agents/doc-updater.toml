@@ -1,6 +1,5 @@
 name = "doc_updater"
 description = "Documentation updater for project context, architecture, commands, testing, and smoke docs."
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

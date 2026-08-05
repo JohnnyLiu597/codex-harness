@@ -48,9 +48,9 @@ edit `src/`, then choose the lowest sufficient release gate:
 
 - `.\deploy\verify-release.ps1 -Level Fast` for docs, templates, skills, and
   low-risk script changes before commit/push.
-- `.\deploy\verify-release.ps1 -Level Standard` when runtime sync preview is
-  relevant; add `-InstallRuntime` only when the local runtime should receive
-  the source change.
+- `.\deploy\verify-release.ps1 -Level Standard` when isolated staging sync
+  compatibility is relevant; add `-InstallRuntime` only when the local runtime
+  should receive the source change.
 - `.\deploy\verify-release.ps1 -Level Full` for hook, agent, workflow, eval,
   sync, public-readiness, or release-critical changes.
 

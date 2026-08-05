@@ -1,6 +1,5 @@
 name = "planner"
 description = "Read-only planning specialist for complex features, refactors, and harness changes."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

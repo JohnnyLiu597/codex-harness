@@ -12,7 +12,8 @@ published without leaking local state.
 - Global Codex instructions and durable behavior notes.
 - Harness capability manifest.
 - Lifecycle hook definitions and privacy-safe hook routing.
-- Native sub-agent profiles with maker-checker and worktree isolation support.
+- Adaptive native sub-agent profiles with maker-checker, graph-shaped
+  delegation, and worktree isolation support.
 - Weekly harness automation template.
 - Lightweight policy docs.
 - PowerShell maintenance scripts.
@@ -51,12 +52,40 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-08-05: Upgraded hooks and verification to v3. Verification completion
+  is now causally paired to one tool invocation and one stable workspace
+  fingerprint; gate and envelope records preserve real process exits, bounded
+  timeouts, required evidence, stale-input detection, and declared-versus-
+  observed facts. Trace evals now grade the final assistant event with timeout,
+  cleanup, attempt, duration, and failure-class evidence. Full releases verify
+  an isolated staging `CODEX_HOME` by default, install only with explicit
+  approval, preserve runtime-only state, and roll back failed installs.
+- 2026-08-04: Closed two independent-review findings in the weekly automation
+  boundary. Restricted mode is now session-bound across working-directory
+  changes, inspects every tool through an exact read-only allowlist, and permits
+  only one hook-registered TEMP JSON target. Unregistered and oversized inputs
+  fail closed and are cleaned. Bidirectional sync, direct runtime installation,
+  package checks, and ignore rules now exclude nested secrets, state databases,
+  logs, sessions, plugins, caches, browser state, sandbox, and TEMP directories.
+- 2026-08-04: Removed global and reusable-agent model/reasoning pins so Codex
+  can inherit or select capability per task. The active CLI configuration no
+  longer carries the incompatible global `[agents]` concurrency table or the
+  unsupported default service tier. Runtime and package verification now reject
+  fixed reusable roles, probe the installed CLI schema, and require task-shaped
+  delegation with reality-anchored maker-checker closure.
+- 2026-08-04: Added a privacy-bounded weekly harness learning loop. It reviews
+  recent Codex task summaries without tool outputs, hashes and deduplicates
+  evidence, researches current official Codex guidance, and produces bounded
+  review proposals. The weekly script exposes no maintenance or source-sync
+  controls, deletes temporary raw input after parsing, and fails if maintainable
+  drift appears. Runtime state under `harness-learning/` is explicitly excluded
+  from the public payload.
 - 2026-08-04: Tightened the public payload boundary after an independent
   source/runtime audit. Bidirectional sync now excludes backup suffixes,
   archived payloads, and runtime-only skills marked `.codex-private`; a new
   deterministic sync test covers both directions. The same test also fixed a
-  Windows short-path relative-path bug. The public automation template is now
-  neutral and model-selectable.
+  Windows short-path relative-path bug. The public automation template now
+  omits model and reasoning fields so the app can use automatic selection.
 - 2026-08-04: Added real Codex CLI forward evidence for standalone custom-agent
   discovery and lifecycle hook loading. The run exposed unsupported compact
   hook context fields and three BOM-prefixed skills that deterministic checks

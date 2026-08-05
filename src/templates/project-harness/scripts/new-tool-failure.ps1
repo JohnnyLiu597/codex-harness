@@ -7,7 +7,8 @@ param(
     [string]$Status = "captured",
     [string]$Summary = "",
     [string]$Operation = "",
-    [string]$Error = "",
+    [Alias("Error")]
+    [string]$ErrorText = "",
     [string]$Recovery = "",
     [string]$ProposedDestination = "triage",
     [string[]]$Evidence = @(),
@@ -60,7 +61,7 @@ $record = [ordered]@{
     status = $Status
     summary = $Summary
     operation = $Operation
-    error = $Error
+    error = $ErrorText
     recovery = $Recovery
     proposed_destination = $ProposedDestination
     evidence = $Evidence
@@ -90,7 +91,7 @@ $Operation
 
 ## Error
 
-$Error
+$ErrorText
 
 ## Recovery
 

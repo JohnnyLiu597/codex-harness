@@ -116,7 +116,8 @@ See `docs/testing.md`.
   parallel-agent automation. L4 loops require reliable L3 single-task evidence,
   durable state, budget limits, maker-checker review, and stop conditions.
 - Use `scripts/invoke-verification-gate.ps1` when a task needs an explicit
-  DocsOnly, HarnessOnly, Runtime, Full, or BeforeCommit gate.
+  DocsOnly, HarnessOnly, Runtime, Full, or BeforeCommit gate. A success-shaped
+  report never overrides a nonzero child-process exit.
 - Use `scripts/summarize-trace-evals.ps1` to compare repeated trace eval runs.
 - Use `scripts/new-tool-failure.ps1` when tool failures affect a task or repeat.
 - Use `scripts/audit-skill-surface.ps1` for read-only skill surface stocktakes.
@@ -128,7 +129,9 @@ See `docs/testing.md`.
 - Use `scripts/new-job-state.ps1` to mirror native Goal, subagent, worktree,
   scheduled, event-driven, or manual work into resumable state records.
 - Use `scripts/invoke-verification-envelope.ps1` when a check needs source,
-  test, grader, environment, and protected-path hashes.
+  test, grader, environment, and protected-path hashes. Require the path
+  classes that matter, use a finite timeout, and reject stale before/after
+  inputs.
 - Use `scripts/new-learning-intake.ps1` for repeated lessons before deciding
   whether to update docs, evals, skills, rules, or scripts.
 - Use `scripts/audit-harness-components.ps1` and bounded ablation records before
@@ -845,6 +848,26 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Resolve-CodexCommand {
+    $candidates = New-Object System.Collections.Generic.List[string]
+    $localBinary = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\bin\codex.exe'
+    if (Test-Path -LiteralPath $localBinary -PathType Leaf) { $candidates.Add($localBinary) | Out-Null }
+    foreach ($command in @(Get-Command codex -All -ErrorAction SilentlyContinue)) {
+        if ($command.Source -and -not $candidates.Contains([string]$command.Source)) {
+            $candidates.Add([string]$command.Source) | Out-Null
+        }
+    }
+    foreach ($candidate in $candidates) {
+        try {
+            $version = (& $candidate --version 2>&1 | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0) {
+                return [pscustomobject]@{ Source = $candidate; Version = $version }
+            }
+        } catch { }
+    }
+    return $null
+}
+
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 if (-not $PromptFile) {
     $PromptFile = Join-Path $root "evals\prompts.csv"
@@ -857,7 +880,7 @@ $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $runDir = Join-Path $root ("evals\runs\" + $stamp)
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 $cases = Import-Csv -LiteralPath $PromptFile
-$codex = Get-Command codex -ErrorAction SilentlyContinue
+$codex = Resolve-CodexCommand
 $results = New-Object System.Collections.Generic.List[object]
 
 foreach ($case in $cases) {

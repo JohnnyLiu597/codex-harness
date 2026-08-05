@@ -40,6 +40,11 @@ function Copy-MaintainableDirectory {
     $excludedDirectories = @($ExcludeDirectoryNames) + @(
         "__pycache__",
         ".codex-trash",
+        ".sandbox",
+        ".sandbox-bin",
+        ".sandbox-secrets",
+        ".tmp",
+        "tmp",
         "plugins",
         "plugin",
         "cache",
@@ -57,6 +62,7 @@ function Copy-MaintainableDirectory {
         "process_manager",
         "harness-health",
         "harness-changes",
+        "harness-learning",
         "skills.archived",
         "agents.archived",
         "backups",
@@ -159,15 +165,19 @@ $excludedEvalArtifacts = Move-GeneratedEvalArtifactsOutOfSource
 
 $sourceOnlyPreserved = New-Object System.Collections.Generic.List[string]
 if ($refreshBackup) {
-    foreach ($relative in @("automations")) {
-        $sourceOnly = Join-Path $refreshBackup $relative
-        if (Test-Path -LiteralPath $sourceOnly -PathType Container) {
-            $target = Join-Path $srcRoot $relative
-            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
-            Copy-Item -LiteralPath $sourceOnly -Destination $target -Recurse -Force
-            $sourceOnlyPreserved.Add($relative) | Out-Null
-        }
+    $relative = "automations\harness\automation.toml.template"
+    $sourceOnly = Join-Path $refreshBackup $relative
+    if (Test-Path -LiteralPath $sourceOnly -PathType Leaf) {
+        $target = Join-Path $srcRoot $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+        Copy-Item -LiteralPath $sourceOnly -Destination $target -Force
+        $sourceOnlyPreserved.Add($relative) | Out-Null
     }
+}
+
+$automationTemplate = "automations\harness\automation.toml.template"
+if (Copy-FileIfPresent -RelativePath $automationTemplate) {
+    $copiedFiles.Add($automationTemplate) | Out-Null
 }
 
 $manifest = [ordered]@{
@@ -191,6 +201,7 @@ $manifest = [ordered]@{
         "plugins",
         "harness-health",
         "harness-changes",
+        "harness-learning",
         "runtime-generated automations except source templates",
         "harness-evals/runs",
         "harness-evals/trace-evals/runs",

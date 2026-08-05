@@ -25,13 +25,47 @@ function Get-McpSubsections {
         Sort-Object -Unique)
 }
 
+function Resolve-CodexCommand {
+    param(
+        [string[]]$CandidatePaths = @(),
+        [switch]$OnlyCandidates
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+    foreach ($candidate in @($CandidatePaths)) {
+        if ($candidate -and -not $candidates.Contains([string]$candidate)) {
+            $candidates.Add([string]$candidate) | Out-Null
+        }
+    }
+    if (-not $OnlyCandidates) {
+        $localBinary = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\bin\codex.exe'
+        if ((Test-Path -LiteralPath $localBinary -PathType Leaf) -and -not $candidates.Contains($localBinary)) {
+            $candidates.Add($localBinary) | Out-Null
+        }
+        foreach ($command in @(Get-Command codex -All -ErrorAction SilentlyContinue)) {
+            if ($command.Source -and -not $candidates.Contains([string]$command.Source)) {
+                $candidates.Add([string]$command.Source) | Out-Null
+            }
+        }
+    }
+    foreach ($candidate in $candidates) {
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+        try {
+            $version = (& $candidate --version 2>&1 | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0) {
+                return [pscustomobject]@{ Source = $candidate; Version = $version }
+            }
+        } catch { }
+    }
+    return $null
+}
+
 $required = @(
     "AGENTS.md",
     "CODEX.md",
     "harness.capabilities.json",
     "harness.components.json",
     "hooks.json",
-    "config.toml",
     "docs\auth.md",
     "docs\environment.md",
     "docs\profiles.md",
@@ -47,6 +81,7 @@ $required = @(
     "docs\context-budget.md",
     "docs\job-state.md",
     "docs\component-evolution.md",
+    "docs\weekly-learning.md",
     "rules\default.rules",
     "scripts\audit-project-harness.ps1",
     "scripts\check-project-docs.ps1",
@@ -64,6 +99,7 @@ $required = @(
     "scripts\new-agent-run.ps1",
     "scripts\new-job-state.ps1",
     "scripts\new-learning-intake.ps1",
+    "scripts\invoke-weekly-harness-learning.ps1",
     "scripts\new-runtime-run.ps1",
     "scripts\invoke-verification-envelope.ps1",
     "scripts\invoke-verification-gate.ps1",
@@ -150,8 +186,11 @@ $required = @(
     "harness-evals\run-harness-evals.ps1",
     "harness-evals\run-trace-evals.ps1",
     "harness-evals\grade-trace-evals.ps1",
+    "harness-evals\test-trace-evals-v3.ps1",
+    "harness-evals\test-verification-gate.ps1",
     "harness-evals\test-verification-envelope.ps1",
     "harness-evals\test-project-harness-optimizer.ps1",
+    "harness-evals\test-weekly-harness-learning.ps1",
     "harness-evals\trace-evals\README.md",
     "harness-evals\trace-evals\prompts.csv",
     "harness-evals\cases\docs-sync\README.md",
@@ -181,6 +220,8 @@ $required = @(
     "harness-evals\test-article-source-resolver.ps1",
     "harness-evals\test-web-source-resolver.ps1",
     "skills\project-harness-optimizer\SKILL.md",
+    "skills\harness-orchestrator\SKILL.md",
+    "skills\harness-orchestrator\references\workflow-graph-contract.md",
     "skills\web-source-resolver\SKILL.md",
     "skills\web-source-resolver\agents\openai.yaml",
     "skills\web-source-resolver\references\routing-contract.md",
@@ -216,19 +257,31 @@ if ($missing.Count -gt 0) {
     throw "Missing global harness files: $($missing -join ', ')"
 }
 
-if ($python) {
+$configPath = Join-Path $codexHomePath "config.toml"
+$configPresent = Test-Path -LiteralPath $configPath -PathType Leaf
+$config = ""
+$configMcpNames = @()
+$configMcpSubsections = @()
+
+if ($configPresent -and $python) {
     $script = @'
 from pathlib import Path
 import tomllib
-root = Path(r"__ROOT__")
-tomllib.loads((root / "config.toml").read_text(encoding="utf-8"))
+path = Path(r"__CONFIG__")
+tomllib.loads(path.read_text(encoding="utf-8"))
 print("toml-ok")
 '@
-    $script = $script.Replace("__ROOT__", $codexHomePath.Replace('\', '\\'))
+    $script = $script.Replace("__CONFIG__", $configPath.Replace('\', '\\'))
     $tmp = Join-Path $env:TEMP ("codex-global-harness-verify-" + [guid]::NewGuid().ToString("N") + ".py")
-    Set-Content -LiteralPath $tmp -Value $script -Encoding UTF8
-    & $python.Source $tmp | Out-Null
-    Remove-Item -LiteralPath $tmp -Force
+    try {
+        Set-Content -LiteralPath $tmp -Value $script -Encoding UTF8
+        & $python.Source $tmp | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "config.toml TOML parse failed." }
+    } finally {
+        if (Test-Path -LiteralPath $tmp -PathType Leaf) {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 foreach ($jsonPath in @(
@@ -246,36 +299,91 @@ foreach ($jsonPath in @(
     }
 }
 
-$config = Get-Content -LiteralPath (Join-Path $codexHomePath "config.toml") -Raw
-$configMcpNames = Get-McpServerNames -Config $config
-$configMcpSubsections = Get-McpSubsections -Config $config
-foreach ($name in @("github", "context7", "exa", "memory", "playwright", "sequential-thinking")) {
-    if ($config -notmatch "(?m)^\[mcp_servers\.$([regex]::Escape($name))\]") {
-        throw "Missing expected MCP server: $name"
+if ($configPresent) {
+    $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+    $rootConfig = [regex]::Split($config, '(?m)^\s*\[')[0]
+    if ($rootConfig -match '(?m)^\s*model\s*=' -or
+        $rootConfig -match '(?m)^\s*(model_reasoning_effort|reasoning_effort)\s*=') {
+        throw 'Global config pins model or reasoning effort; leave both unset so Codex can adapt to the task.'
+    }
+    $configMcpNames = Get-McpServerNames -Config $config
+    $configMcpSubsections = Get-McpSubsections -Config $config
+    foreach ($name in @("github", "context7", "exa", "memory", "playwright", "sequential-thinking")) {
+        if ($config -notmatch "(?m)^\[mcp_servers\.$([regex]::Escape($name))\]") {
+            throw "Missing expected MCP server: $name"
+        }
+    }
+
+    foreach ($featureName in @("hooks", "goals", "multi_agent")) {
+        $featureMatch = [regex]::Match(
+            $config,
+            "(?m)^\s*$([regex]::Escape($featureName))\s*=\s*(true|false)\s*(?:#.*)?$"
+        )
+        if ($featureMatch.Success -and $featureMatch.Groups[1].Value -eq "false") {
+            throw "Stable default feature is explicitly disabled: $featureName=false"
+        }
+    }
+    if ($config -match '(?m)^\s*plugin_hooks\s*=') {
+        throw "Found obsolete plugin_hooks feature flag in active global config."
+    }
+    if ($config -match 'codex_hooks') {
+        throw "Found deprecated codex_hooks in active global config."
+    }
+    if ($config -match 'codex-stop-log\.ps1' -or $config -match 'codex-hook-router\.ps1') {
+        throw "Legacy inline hook wiring remains in config.toml; use hooks.json as the single user-level hook source."
     }
 }
 
-if ($config -notmatch '(?m)^hooks\s*=\s*true') {
-    throw "Feature hooks=true is not enabled."
+$codexCli = Resolve-CodexCommand
+if (-not $codexCli) {
+    throw 'No executable Codex CLI candidate passed the --version probe.'
 }
-if ($config -notmatch '(?m)^plugin_hooks\s*=\s*true') {
-    throw "Feature plugin_hooks=true is not enabled."
+$fallbackFixture = Join-Path $env:TEMP ('codex-cli-fail-' + [guid]::NewGuid().ToString('N') + '.cmd')
+try {
+    [System.IO.File]::WriteAllText($fallbackFixture, "@echo off`r`nexit /b 7`r`n", (New-Object System.Text.ASCIIEncoding))
+    $fallbackProbe = Resolve-CodexCommand -CandidatePaths @($fallbackFixture, $codexCli.Source) -OnlyCandidates
+    if (-not $fallbackProbe -or $fallbackProbe.Source -ne $codexCli.Source) {
+        throw 'Codex CLI resolver did not skip a failing candidate.'
+    }
+} finally {
+    if (Test-Path -LiteralPath $fallbackFixture -PathType Leaf) {
+        Remove-Item -LiteralPath $fallbackFixture -Force -ErrorAction SilentlyContinue
+    }
 }
-if ($config -notmatch '(?m)^goals\s*=\s*true') {
-    throw "Feature goals=true is not enabled."
-}
-if ($config -match 'codex_hooks') {
-    throw "Found deprecated codex_hooks in active global config."
-}
-if ($config -match 'codex-stop-log\.ps1' -or $config -match 'codex-hook-router\.ps1') {
-    throw "Legacy inline hook wiring remains in config.toml; use hooks.json as the single user-level hook source."
+$previousCodexHome = $env:CODEX_HOME
+try {
+    $env:CODEX_HOME = $codexHomePath
+    $cliConfigProbe = (& $codexCli.Source features list 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        $safeProbe = ($cliConfigProbe -replace '[\r\n]+', ' ')
+        if ($safeProbe.Length -gt 600) { $safeProbe = $safeProbe.Substring(0, 600) + '...' }
+        throw "Codex CLI rejected the selected CODEX_HOME config: $safeProbe"
+    }
+} finally {
+    if ($null -eq $previousCodexHome) {
+        Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+    } else {
+        $env:CODEX_HOME = $previousCodexHome
+    }
 }
 
 $hooksPath = Join-Path $codexHomePath "hooks.json"
 $hooks = Get-Content -LiteralPath $hooksPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$hookDefinitionSha256 = (Get-FileHash -LiteralPath $hooksPath -Algorithm SHA256).Hash.ToLowerInvariant()
 foreach ($eventName in @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")) {
     if ($hooks.hooks.PSObject.Properties.Name -notcontains $eventName) {
         throw "hooks.json is missing required lifecycle event: $eventName"
+    }
+    foreach ($group in @($hooks.hooks.$eventName)) {
+        foreach ($hook in @($group.hooks)) {
+            if ([string]$hook.command -notmatch 'CODEX_HOME' -or [string]$hook.commandWindows -notmatch 'CODEX_HOME') {
+                throw "Hook wiring for $eventName does not honor CODEX_HOME on both command paths."
+            }
+            if ([string]$hook.command -notmatch [regex]::Escape("-Event $eventName") -or
+                [string]$hook.commandWindows -notmatch [regex]::Escape("-Event $eventName")) {
+                throw "Hook wiring for $eventName does not route to its matching event."
+            }
+        }
     }
 }
 
@@ -287,6 +395,9 @@ foreach ($agentFile in @(Get-ChildItem -LiteralPath (Join-Path $codexHomePath "a
     if (-not $nameMatch.Success -or -not $descriptionMatch.Success -or $agentConfig -notmatch '(?m)^\s*developer_instructions\s*=') {
         throw "Custom agent file is missing name, description, or developer_instructions: $($agentFile.Name)"
     }
+    if ($agentConfig -match '(?m)^\s*(model|model_reasoning_effort|reasoning_effort)\s*=') {
+        throw "Reusable custom agent pins model or reasoning effort instead of allowing adaptive selection: $($agentFile.Name)"
+    }
     $expectedName = [System.IO.Path]::GetFileNameWithoutExtension($agentFile.Name).Replace("-", "_")
     $agentName = $nameMatch.Groups[1].Value
     if ($agentName -ne $expectedName) {
@@ -296,6 +407,30 @@ foreach ($agentFile in @(Get-ChildItem -LiteralPath (Join-Path $codexHomePath "a
         throw "Duplicate custom agent name: $agentName"
     }
     $agentNames.Add($agentName) | Out-Null
+}
+
+$automationTemplatePath = Join-Path $codexHomePath 'automations\harness\automation.toml.template'
+$automationTemplate = Get-Content -LiteralPath $automationTemplatePath -Raw -Encoding UTF8
+if ($automationTemplate -match '(?m)^\s*(model|model_reasoning_effort|reasoning_effort)\s*=') {
+    throw 'Weekly automation template pins model or reasoning effort.'
+}
+if ($automationTemplate -notmatch '(?m)^\s*execution_environment\s*=\s*"worktree"\s*$') {
+    throw 'Weekly automation template must use worktree isolation.'
+}
+$weeklyAutomationPath = Join-Path $codexHomePath 'automations\weekly-codex-harness-health\automation.toml'
+if (Test-Path -LiteralPath $weeklyAutomationPath -PathType Leaf) {
+    $weeklyAutomation = Get-Content -LiteralPath $weeklyAutomationPath -Raw -Encoding UTF8
+    $automationModel = [regex]::Match($weeklyAutomation, '(?m)^\s*model\s*=\s*"([^"]+)"\s*$')
+    $automationReasoning = [regex]::Match($weeklyAutomation, '(?m)^\s*reasoning_effort\s*=\s*"([^"]+)"\s*$')
+    if ($automationModel.Success -and $automationModel.Groups[1].Value -ne 'auto') {
+        throw 'Active weekly automation pins a concrete model instead of using the app automatic sentinel.'
+    }
+    if ($automationReasoning.Success -and $automationReasoning.Groups[1].Value -ne 'none') {
+        throw 'Active weekly automation pins reasoning effort instead of using the app no-override sentinel.'
+    }
+    if ($weeklyAutomation -notmatch '(?m)^\s*execution_environment\s*=\s*"worktree"\s*$') {
+        throw 'Active weekly automation must use worktree isolation.'
+    }
 }
 
 foreach ($scriptPath in @(
@@ -315,6 +450,7 @@ foreach ($scriptPath in @(
     "scripts\new-agent-run.ps1",
     "scripts\new-job-state.ps1",
     "scripts\new-learning-intake.ps1",
+    "scripts\invoke-weekly-harness-learning.ps1",
     "scripts\new-runtime-run.ps1",
     "scripts\invoke-verification-envelope.ps1",
     "scripts\invoke-verification-gate.ps1",
@@ -334,8 +470,11 @@ foreach ($scriptPath in @(
     "harness-evals\test-web-source-resolver.ps1",
     "harness-evals\run-trace-evals.ps1",
     "harness-evals\grade-trace-evals.ps1",
+    "harness-evals\test-trace-evals-v3.ps1",
+    "harness-evals\test-verification-gate.ps1",
     "harness-evals\test-verification-envelope.ps1",
     "harness-evals\test-project-harness-optimizer.ps1",
+    "harness-evals\test-weekly-harness-learning.ps1",
     "templates\project-harness\scripts\audit-worktree.ps1",
     "templates\project-harness\scripts\audit-project-harness.ps1",
     "templates\project-harness\scripts\check-all.ps1",
@@ -417,19 +556,6 @@ foreach ($skillPath in $runtimeSkillFiles) {
     }
 }
 
-$workflowCoreTest = Join-Path $codexHomePath "scripts\test-codex-workflow-core.ps1"
-& $workflowCoreTest -CodexHome $codexHomePath | Out-Null
-& (Join-Path $codexHomePath "harness-evals\test-verification-envelope.ps1") -CodexHome $codexHomePath | Out-Null
-& (Join-Path $codexHomePath "harness-evals\test-project-harness-optimizer.ps1") -CodexHome $codexHomePath | Out-Null
-$contextBudget = (& (Join-Path $codexHomePath "scripts\audit-context-budget.ps1") -ProjectRoot $codexHomePath -CodexHome $codexHomePath) | ConvertFrom-Json
-if ($contextBudget.status -eq "failed" -or -not $contextBudget.read_only) {
-    throw "Global context budget audit failed or mutated state."
-}
-$componentAudit = (& (Join-Path $codexHomePath "scripts\audit-harness-components.ps1") -ProjectRoot $codexHomePath) | ConvertFrom-Json
-if ($componentAudit.status -eq "failed" -or -not $componentAudit.read_only) {
-    throw "Global component registry audit failed or mutated state."
-}
-
 if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) {
     throw "rg not found on PATH and bundled fallback missing."
 }
@@ -439,12 +565,17 @@ if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) {
     summary = "Global Codex harness verified."
     codex_home = $codexHomePath
     checked = $required
+    config_present = $configPresent
     mcp_servers = $configMcpNames
     mcp_subsections = $configMcpSubsections
+    codex_cli_version = $codexCli.Version
+    behavior_evals_executed = $false
     hooks = @{
         enabled = $true
         source = "hooks.json"
         router = "scripts\codex-hook.ps1"
+        definition_sha256 = $hookDefinitionSha256
+        trust = "review-with-codex-hooks-command-after-definition-change"
     }
     custom_agents = $agentNames.ToArray()
     skill_files_checked = $runtimeSkillFiles.Count

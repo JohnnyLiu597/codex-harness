@@ -31,11 +31,17 @@ Do not mix the first edit direction across lanes.
 
 1. Edit `codex-harness\src` and release tooling.
 2. Run source-local tests before installing runtime.
-3. Preview source-to-runtime sync.
-4. Install only after source checks pass.
-5. Verify runtime and deterministic evals.
-6. Inspect the publish diff and forbidden-file boundary.
-7. Commit and push only when the user requested it.
+3. Preview source-to-runtime sync, then run the selected release level.
+4. For `Full`, verify an isolated staging `CODEX_HOME`; run the global static
+   health owner once and the deterministic eval owner once.
+5. Install only with explicit `-InstallRuntime` after staging passes. Back up
+   maintainable paths, preserve runtime-only state, and roll back failed
+   install-phase checks.
+6. Run post-install global verification and hook wiring/hash canary. Do not
+   duplicate deterministic evals already owned by Full staging.
+7. Inspect the sanitized release manifest, publish diff, and forbidden-file
+   boundary.
+8. Commit and push only when the user requested it.
 
 ### Audit Only
 

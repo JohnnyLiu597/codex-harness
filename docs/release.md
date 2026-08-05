@@ -10,8 +10,9 @@ use the Runtime Hotfix lane instead.
 | Gate | Command | Purpose |
 |---|---|---|
 | Fast | `.\deploy\verify-release.ps1 -Level Fast` | Default before GitHub push. Checks whitespace and package public-readiness without runtime install or evals. |
-| Standard | `.\deploy\verify-release.ps1 -Level Standard` | Adds runtime sync preview. Add `-InstallRuntime` when the current local runtime should receive the source change. |
-| Full | `.\deploy\verify-release.ps1 -Level Full` | Installs runtime, runs global verification, and runs deterministic harness evals. Required when workflow-core, hook, verification, eval, sync, or publication-boundary behavior changed. |
+| Standard | `.\deploy\verify-release.ps1 -Level Standard` | Adds an isolated source-to-staging sync and one global static/runtime-health pass. The real runtime remains unchanged unless `-InstallRuntime` is explicit. |
+| Full | `.\deploy\verify-release.ps1 -Level Full` | Verifies an isolated staging `CODEX_HOME`, runs global static/runtime health once and deterministic evals once, then writes a sanitized release manifest. Required when workflow-core, hook, verification, eval, sync, or publication-boundary behavior changed. |
+| Full install | `.\deploy\verify-release.ps1 -Level Full -InstallRuntime` | Runs Full staging first, then backs up maintainable runtime paths, installs, verifies the runtime and hook wiring, and rolls back automatically on failure. |
 
 Use Full for hook, agent, workflow-control, eval, sync, public-readiness, or
 release-critical changes. Use Fast for docs, templates, skills, and low-risk
@@ -24,9 +25,11 @@ current workflow-core upgrade rather than a wording-only docs refresh.
 
 1. Classify the change as Fast, Standard, or Full.
 2. Run `.\deploy\verify-release.ps1 -Level <Fast|Standard|Full>`.
-3. Review `git status`.
-4. Commit.
-5. Push only when the user asked for GitHub publication.
+3. Add `-InstallRuntime` only after staging passes and the local runtime should
+   receive the release.
+4. Review the sanitized release manifest and `git status`.
+5. Commit.
+6. Push only when the user asked for GitHub publication.
 
 Do not install runtime or run deterministic evals just because a commit will be
 pushed. Install runtime when the active local Codex harness should receive the
@@ -40,9 +43,11 @@ source change; run evals when the changed behavior needs regression evidence.
 - No browser profile data.
 - No plugin cache.
 - No generated images.
+- No nested `.sandbox*`, `.tmp`, or `tmp` runtime state.
 - No hook logs or hook state snapshots.
 - No verification envelopes or raw step logs unless intentionally sanitized.
-- No job-state, learning-intake, or ablation-run artifacts.
+- No job-state, learning-intake, weekly learning state or reports, or
+  ablation-run artifacts.
 - No raw trace-eval or tool-eval output artifacts.
 - No private API tokens.
 - No raw prompt payload dumps.

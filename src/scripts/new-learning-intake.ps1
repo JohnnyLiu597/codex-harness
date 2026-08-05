@@ -29,7 +29,7 @@ function Format-List {
     return (($Items | ForEach-Object { "- $_" }) -join "`r`n")
 }
 
-$acceptedSources = @("test", "tool", "review", "ci", "runtime", "user")
+$acceptedSources = @("test", "tool", "review", "ci", "runtime", "user", "conversation")
 $acceptedRoutes = @("docs", "eval", "skill", "rule", "script", "component", "retire")
 $routeAliases = @{
     "documentation" = "docs"

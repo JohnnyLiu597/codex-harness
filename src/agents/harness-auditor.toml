@@ -1,6 +1,5 @@
 name = "harness_auditor"
 description = "Read-only auditor for Codex runtime/source sync, hooks, skills, agents, and verification gates."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

@@ -1,6 +1,5 @@
 name = "e2e_runner"
 description = "Browser and runtime evidence specialist for Playwright and user-facing flows."
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

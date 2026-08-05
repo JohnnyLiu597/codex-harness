@@ -16,6 +16,9 @@ function Add-Check {
 if (-not (Test-Path -LiteralPath $skillPath -PathType Leaf)) {
     throw "project-harness-optimizer SKILL.md missing: $skillPath"
 }
+if (-not (Test-Path -LiteralPath (Join-Path $root "docs\weekly-learning.md") -PathType Leaf)) {
+    throw "Weekly learning policy missing."
+}
 
 $skill = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
 $skillLines = @(Get-Content -LiteralPath $skillPath -Encoding UTF8).Count
@@ -43,12 +46,21 @@ foreach ($reference in @(
 Add-Check -Name "resources" -Detail "maintenance, workflow, scaffold, and UI metadata present"
 
 $workflowReference = Get-Content -LiteralPath (Join-Path $skillRoot "references\workflow-state-and-evidence.md") -Raw -Encoding UTF8
-foreach ($required in @("standalone TOML", "name", "description", "developer_instructions", "active Codex model")) {
+foreach ($required in @(
+    "standalone TOML",
+    "name",
+    "description",
+    "developer_instructions",
+    "model_reasoning_effort",
+    "spawn-time override",
+    "fan-out/fan-in",
+    "checkpoint"
+)) {
     if ($workflowReference -notmatch [regex]::Escape($required)) {
         throw "Optimizer workflow reference is missing portable custom-agent guidance: $required"
     }
 }
-Add-Check -Name "custom-agent-contract" -Detail "standalone schema and model inheritance guidance present"
+Add-Check -Name "custom-agent-contract" -Detail "standalone schema, adaptive capability, graph, and checkpoint guidance present"
 
 foreach ($required in @(
     "Runtime Hotfix",
@@ -60,7 +72,21 @@ foreach ($required in @(
     "new-job-state.ps1",
     "invoke-verification-envelope.ps1",
     "invoke-verification-gate.ps1",
+    "tool_use_id",
+    "declared policy",
+    "isolated staging",
+    "-InstallRuntime",
+    "roll back",
+    "verification ownership",
     "new-learning-intake.ps1",
+    "invoke-weekly-harness-learning.ps1",
+    "list_threads",
+    "read_thread",
+    "includeOutputs=false",
+    "untrusted data",
+    "proposal-only",
+    "verification-skip",
+    "source-sync",
     "audit-harness-components.ps1",
     "new-ablation-run.ps1",
     "web-source-resolver",

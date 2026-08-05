@@ -36,12 +36,13 @@ The result is a small architecture for turning a working Codex environment into
 something another maintainer can inspect, adapt, and improve.
 
 Recent harness upgrades now close the core Codex workflow loop with
-privacy-safe lifecycle hooks, native sub-agent guardrails, bounded context
-budgets, resumable job-state records, verification gates and envelopes,
-trace/tool-eval follow-up, learning intake, and component-registry audits.
-The bundled agents are standalone Codex custom-agent files, so a source install
-does not depend on machine-local role declarations that are excluded from the
-repository.
+privacy-safe lifecycle hooks, adaptive native sub-agent delegation,
+graph-shaped workflow guidance, bounded context budgets, resumable job-state
+records, verification gates and envelopes, trace/tool-eval follow-up, learning
+intake, weekly cross-project task-summary learning, current Codex concept
+research, and component-registry audits. The bundled agents are standalone
+Codex custom-agent files that omit model and reasoning pins, so Codex can
+inherit or choose capability per task without machine-local role declarations.
 
 ## Layout
 
@@ -68,10 +69,15 @@ the package, and syncing source back to the runtime.
 
 - Codex global instructions and durable behavior notes.
 - Codex sub-agent profiles for planning, review, testing, docs, security, and
-  harness auditing.
+  harness auditing. Reusable profiles define responsibility and permissions,
+  while model or reasoning overrides remain task-specific decisions.
 - Hook routing, lifecycle guardrails, and stop-log scripts designed to stay
   quiet and local.
-- A weekly Codex automation template for harness health and small repairs.
+- A weekly Codex automation template for health, recent-task learning, current
+  Codex research, deduplication, and review-only improvement proposals. The
+  public template omits model and reasoning fields; the app-owned task uses its
+  automatic/no-override state and cannot edit or sync maintainable harness
+  files.
 - Workflow scripts for test-surface detection, verification, learning intake,
   job-state records, and harness checks.
 - Project scaffold templates for long-running repositories.
@@ -86,7 +92,8 @@ the package, and syncing source back to the runtime.
 - Article-specific completeness, metadata, image, and citation resolution as a
   downstream specialization rather than the boundary of web intake.
 - Public-readiness rules that exclude secrets, logs, sessions, caches, browser
-  state, plugin downloads, and generated runtime artifacts.
+  state, plugin downloads, nested sandbox/TEMP state, and generated runtime
+  artifacts.
 
 ## Common Commands
 
@@ -157,11 +164,15 @@ src -> verify-release Fast/Standard/Full -> commit/push
 
 `Fast` is the default for docs, templates, skills, and low-risk scripts. It
 checks git whitespace and package public-readiness without installing runtime
-or running deterministic evals. `Standard` adds runtime sync preview and can
-install the local runtime with `-InstallRuntime`. `Full` installs runtime,
-runs global verification, and runs deterministic harness evals. Use `Full`
-when hooks, sub-agent workflow control, eval plumbing, sync rules,
-verification envelopes, or publication boundaries changed.
+or running deterministic evals. `Standard` adds an isolated staging sync and
+one static/runtime-health pass. `Full`
+builds an isolated staging `CODEX_HOME`, runs static/runtime health once, then
+runs the deterministic harness eval owner once. Neither level mutates the real
+runtime by default. Add `-InstallRuntime` only after staging passes; the
+installer backs up maintainable paths, verifies the installed runtime and hook
+wiring, and rolls back on failure. Use `Full` when hooks, sub-agent workflow
+control, eval plumbing, sync rules, verification envelopes, or publication
+boundaries changed.
 
 Use Audit Only when you only want to inspect drift, public-readiness, or health
 without changing files.
@@ -170,11 +181,14 @@ without changing files.
 
 The repository intentionally does not publish `config.toml`, `auth.json`,
 SQLite state, logs, sessions, plugin caches, browser state, generated eval runs,
-or machine-local runtime artifacts. Automation source is stored as a template;
-the app-owned recurring task is registered separately through Codex App. The
-package verifier checks this boundary. Hook logs, job-state records, learning
-intake artifacts, bounded ablation runs, and verification envelopes belong in
-runtime or ignored project artifacts, not the source payload.
+weekly learning state, or machine-local runtime artifacts. Automation source is
+stored as a template; the app-owned recurring task is registered separately
+through Codex App. The installer copies only that public template and preserves
+private app task state; both sync directions reject nested runtime state. The
+package verifier checks the same boundary. Hook logs,
+job-state records, learning intake artifacts, bounded ablation runs, and
+verification envelopes belong in runtime or ignored project artifacts, not the
+source payload.
 
 A locally installed personal skill can remain outside the public package by
 placing a `.codex-private` marker in that runtime skill directory. Runtime to

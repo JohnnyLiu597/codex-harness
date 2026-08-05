@@ -39,7 +39,9 @@
       "codex-workflow-core",
       "hook-router",
       "scheduled-maintenance",
+      "weekly-harness-learning",
       "agent-pack",
+      "workflow-graph-contract",
       "workflow-entry",
       "test-surface-detection",
       "runtime-runs",
@@ -61,19 +63,21 @@
   "profiles": {
     "core": "Always-on harness behavior, safety, project context, and verification.",
     "runtime-evidence": "Real runtime run records linked to feature evidence for user-facing behavior.",
-    "verification-gate": "Optional manual gate for DocsOnly, HarnessOnly, Runtime, Full, and BeforeCommit verification modes.",
+    "verification-gate": "Optional manual gate for DocsOnly, HarnessOnly, Runtime, Full, and BeforeCommit modes that preserves real child-process exit status.",
     "loop-policy": "Project scaffold guidance for L1-L4 diagnosis and safe L4 loop admission with state, budget, isolation, maker-checker review, and stop conditions.",
     "trace-eval-trends": "Summaries and index files for comparing trace eval runs over time.",
     "tool-failures": "Structured tool failure records for recovery and repeated-failure triage.",
     "skill-surface": "Read-only stocktake of active skill count, trigger quality, provider-specific residue, and large skills.",
     "context-budget": "Read-only byte and line budgets for project anchors, layered AGENTS files, and active skills.",
     "job-state": "Durable adapter records for native Goal, subagent, worktree, scheduled, event-driven, and manual work.",
-    "verification-envelope": "Tamper-evident command evidence with source, test, grader, output, environment, and protected-path hashes.",
+    "verification-envelope": "Tamper-evident command evidence with finite timeouts, required path classes, before/after input hashes, stale detection, and declared-versus-observed separation.",
     "component-evolution": "Registry, review cadence, compensation hypotheses, bounded ablation, and retirement criteria for harness components.",
     "codex-workflow-core": "Codex-only workflow-control pack: hook router, agent pack, workflow entry, and self-tests.",
     "hook-router": "Metadata-only local hook event router with privacy-preserving Stop hook records.",
-    "scheduled-maintenance": "Weekly Codex cron automation that runs harness health, bounded repairs, and verification.",
+    "scheduled-maintenance": "Weekly Codex cron automation that runs health checks, bounded cross-project learning, current concept research, and review-proposal generation without unattended source edits.",
+    "weekly-harness-learning": "Privacy-bounded review of recent Codex task summaries plus official current research, deduplicated private state, fail-closed file-drift detection, and explicitly approved maintenance handoff.",
     "agent-pack": "Role-specific Codex sub-agents for planning, testing, E2E evidence, build repair, security, docs, harness audit, regressions, and cleanup.",
+    "workflow-graph-contract": "Small Codex-native serial, fan-out/fan-in, supervisor-worker, and evaluator-optimizer shapes with adaptive capability routing, deterministic edges, checkpoint reuse, idempotent effects, and reality-anchored completion.",
     "workflow-entry": "Command-style workflow script for plan, verify, TDD, E2E, review, security, learn, checkpoint, and orchestrate flows.",
     "test-surface-detection": "Project test surface detector that recommends build, typecheck, lint, unit, E2E, smoke, runtime, and harness checks.",
     "coordination": "Session handoff, worker run records, learning intake, and tool-surface discipline for long-running work.",
@@ -90,6 +94,7 @@
     "global": [
       "scripts\\verify-global-harness.ps1",
       "harness-evals\\run-harness-evals.ps1",
+      "harness-evals\\test-trace-evals-v3.ps1",
       "scripts\\check-harness-surface.ps1",
       "scripts\\harness-health.ps1"
     ],
@@ -119,6 +124,7 @@
     ],
     "verification_gate": [
       "scripts\\invoke-verification-gate.ps1",
+      "harness-evals\\test-verification-gate.ps1",
       "docs\\verification-gate.md"
     ],
     "verification_envelope": [
@@ -174,16 +180,36 @@
       "scripts\\detect-project-test-surface.ps1",
       "scripts\\invoke-codex-workflow.ps1",
       "scripts\\invoke-verification-envelope.ps1",
+      "scripts\\invoke-verification-gate.ps1",
       "scripts\\test-codex-workflow-core.ps1",
+      "harness-evals\\test-verification-gate.ps1",
+      "harness-evals\\test-verification-envelope.ps1",
+      "harness-evals\\test-trace-evals-v3.ps1",
       "agents\\planner.toml",
       "agents\\tester.toml",
       "agents\\e2e-runner.toml",
       "agents\\harness-auditor.toml"
     ],
+    "workflow_graph_contract": [
+      "docs\\codex-workflow-core.md",
+      "skills\\harness-orchestrator\\SKILL.md",
+      "skills\\harness-orchestrator\\references\\workflow-graph-contract.md",
+      "skills\\project-harness-optimizer\\references\\workflow-state-and-evidence.md"
+    ],
     "scheduled_maintenance": [
       "automations\\harness\\automation.toml.template",
       "scripts\\harness-health.ps1",
-      "scripts\\verify-global-harness.ps1"
+      "scripts\\verify-global-harness.ps1",
+      "scripts\\invoke-weekly-harness-learning.ps1",
+      "harness-evals\\test-weekly-harness-learning.ps1",
+      "docs\\weekly-learning.md"
+    ],
+    "weekly_harness_learning": [
+      "scripts\\invoke-weekly-harness-learning.ps1",
+      "harness-evals\\test-weekly-harness-learning.ps1",
+      "skills\\project-harness-optimizer\\SKILL.md",
+      "skills\\project-harness-optimizer\\references\\workflow-state-and-evidence.md",
+      "docs\\weekly-learning.md"
     ]
   },
   "known_warnings": [
@@ -191,6 +217,11 @@
       "id": "provider-token-location",
       "status": "accepted-risk",
       "summary": "A machine-local provider credential field remains in config.toml; the publishable source excludes config.toml and only reports this boundary without copying values."
+    },
+    {
+      "id": "hook-definition-trust",
+      "status": "manual-review",
+      "summary": "Automated checks verify hook definition hashes and wrapper/router wiring, but a changed definition may still require explicit review through Codex /hooks."
     }
   ]
 }

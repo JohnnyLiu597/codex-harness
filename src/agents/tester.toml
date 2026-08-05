@@ -1,6 +1,5 @@
 name = "tester"
 description = "Verification specialist that finds and runs the smallest meaningful checks."
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

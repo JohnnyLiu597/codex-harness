@@ -31,6 +31,12 @@ Project scaffolds include:
 Use `-ContinueOnError` when you want a full report instead of stopping at the
 first failed step.
 
+Each step has a finite 300-second timeout by default. Override it with
+`-StepTimeoutSeconds` when a known check needs a different bound. A timed-out
+step terminates its child process tree. The gate uses the real child-process
+exit code as the source of truth, so a success-shaped JSON payload cannot hide
+a nonzero native exit.
+
 ## Output
 
 Each run writes:
@@ -47,6 +53,14 @@ Do not use this as a substitute for real runtime evidence. When user-facing
 behavior changes, record proof with `scripts/new-runtime-run.ps1`.
 
 Use `scripts/invoke-verification-envelope.ps1` when a single check needs a
-tamper-evident record of source, test, grader, command, output, environment,
-evidence, and protected paths. The gate selects depth; the envelope records a
-specific check.
+tamper-evident record of source, test, grader, command, environment, evidence,
+and protected paths. The gate selects depth; the envelope records a specific
+check.
+
+The envelope also defaults to a finite 300-second timeout, terminates the child
+process tree on expiry, and cleans temporary capture files. Use
+`-RequireSourcePaths`, `-RequireTestPaths`, `-RequireGraderPaths`,
+`-RequireEvidencePaths`, and `-RequireProtectedPaths` to turn declared inputs
+into required evidence. Before/after hashes detect stale inputs and protected
+path changes. Declared policy and observed evidence remain separate, and the
+manifest stores hashes and bounded metadata rather than raw command output.

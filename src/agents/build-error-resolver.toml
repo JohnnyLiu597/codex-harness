@@ -1,6 +1,5 @@
 name = "build_error_resolver"
 description = "Minimal-diff resolver for build, type, lint, and dependency errors."
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

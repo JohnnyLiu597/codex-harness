@@ -172,7 +172,9 @@ not become a default stop hook.
 When a high-value check needs tamper evidence, use
 `scripts/invoke-verification-envelope.ps1`. It hashes the command, source,
 tests, grader, output, environment, protected paths, and evidence without
-persisting raw command output.
+persisting raw command output. Use finite timeouts, require the path classes
+that matter, keep input before/after hashes stable, and distinguish declared
+requirements from evidence actually observed.
 
 Use `scripts/summarize-trace-evals.ps1` after trace eval runs to compare recent
 case status, hit rates, and repeated failures. Use
@@ -245,7 +247,7 @@ Manual global health check:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\harness-health.ps1"
 ```
 
-Deterministic harness regression checks:
+Deterministic harness regression checks are owned by:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-harness-evals.ps1"
@@ -257,7 +259,8 @@ Real-task trace eval plumbing:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\harness-evals\run-trace-evals.ps1" -DryRun
 ```
 
-Global verification only:
+Global static/runtime health, CLI config compatibility, and hook wiring/hash
+verification are owned by:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\scripts\verify-global-harness.ps1"
@@ -297,8 +300,9 @@ Core files:
 
 Files under `~/.codex/agents` are standalone custom-agent definitions. Each
 contains `name`, `description`, and `developer_instructions`, and normally
-inherits the active Codex model. Machine-local `config.toml` role declarations
-are not required for the maintained agent pack.
+omits model and reasoning pins so Codex can inherit or choose an appropriate
+capability for the task. Machine-local `config.toml` role declarations are not
+required for the maintained agent pack.
 
 Use the workflow entry point for command-style flows:
 
@@ -311,6 +315,17 @@ build error resolver, security reviewer, doc updater, harness auditor,
 regression miner, and refactor cleaner. Hooks remain quiet and metadata-only.
 They may remind Codex to verify, sync runtime/source, or record learning, but
 they must not run heavy tests or store raw prompts.
+
+For substantial tasks, delegate independent research, exploration, testing,
+review, or implementation branches when doing so materially improves parallel
+progress, context isolation, specialization, or checker independence. Treat a
+bounded qualifying branch as a default delegation target when native subagent
+tooling is available; keep it local only when coordination cost or dependency
+coupling outweighs the benefit. The parent keeps the immediate blocker,
+integration, and final decision. Use the
+smallest graph shape in `skills/harness-orchestrator`: serial, fan-out/fan-in,
+supervisor-workers, or bounded evaluator-optimizer. Explicit model or reasoning
+overrides are task-specific decisions, not permanent role defaults.
 
 For recurring or event-driven work, treat Loop Engineering as an L4 capability
 that depends on a reliable L3 harness. Start with `docs/loop.md`: define the

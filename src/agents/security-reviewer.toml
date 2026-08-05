@@ -1,6 +1,5 @@
 name = "security_reviewer"
 description = "Security reviewer for auth, secrets, user input, permissions, and sensitive data."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

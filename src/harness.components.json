@@ -19,15 +19,16 @@
       "id": "lifecycle-guardrails",
       "type": "hooks",
       "owner": "harness-maintainer",
-      "purpose": "Provide quiet lifecycle reminders and privacy-safe local metadata checks.",
-      "compensation_hypothesis": "Small lifecycle checks compensate for missed verification and handoff steps without storing task content.",
+      "purpose": "Provide quiet lifecycle reminders, privacy-safe metadata checks, and causally paired verification state.",
+      "compensation_hypothesis": "Small lifecycle checks compensate for missed verification and handoff steps by requiring one matching tool invocation and stable workspace fingerprint without storing task content.",
       "paths": [
         "hooks.json",
         "scripts/codex-hook.ps1",
         "scripts/codex-hook-router.ps1"
       ],
       "evidence": [
-        "scripts/test-codex-workflow-core.ps1"
+        "scripts/test-codex-workflow-core.ps1",
+        "hooks.json"
       ],
       "cost": {
         "level": "low",
@@ -58,27 +59,31 @@
       "id": "role-guidance",
       "type": "agents",
       "owner": "harness-maintainer",
-      "purpose": "Provide bounded role instructions for planning, review, testing, research, and maintenance work.",
-      "compensation_hypothesis": "Focused role guidance compensates for context overload and makes checker responsibilities explicit.",
+      "purpose": "Provide bounded role instructions and small graph-shaped coordination for planning, review, testing, research, and maintenance work.",
+      "compensation_hypothesis": "Focused role guidance, adaptive capability routing, deterministic handoffs, and fresh-context checking compensate for context overload and fragile single-loop coordination.",
       "paths": [
-        "agents"
+        "agents",
+        "skills/harness-orchestrator"
       ],
       "evidence": [
         "scripts/new-agent-run.ps1",
+        "skills/harness-orchestrator/references/workflow-graph-contract.md",
         "harness-evals/run-harness-evals.ps1"
       ],
       "cost": {
         "level": "medium",
         "drivers": [
           "instruction maintenance",
-          "role selection overhead"
+          "role selection overhead",
+          "graph coordination and checkpoint bookkeeping"
         ]
       },
       "risk": {
         "level": "medium",
         "drivers": [
           "role overlap",
-          "stale instructions"
+          "stale instructions",
+          "unnecessary graph complexity"
         ]
       },
       "status": "active",
@@ -142,7 +147,10 @@
       ],
       "evidence": [
         "harness-evals/run-harness-evals.ps1",
-        "harness-evals/run-trace-evals.ps1"
+        "harness-evals/run-trace-evals.ps1",
+        "harness-evals/test-trace-evals-v3.ps1",
+        "harness-evals/test-verification-gate.ps1",
+        "harness-evals/test-verification-envelope.ps1"
       ],
       "cost": {
         "level": "medium",
@@ -173,34 +181,35 @@
       "id": "scheduled-maintenance",
       "type": "automations",
       "owner": "harness-maintainer",
-      "purpose": "Describe bounded recurring health checks without publishing runtime task state.",
-      "compensation_hypothesis": "A small recurring review compensates for slow configuration drift between active maintenance sessions.",
+      "purpose": "Run bounded recurring health, cross-project learning, current concept research, and proposal generation without unattended maintainable-file edits or published runtime task state.",
+      "compensation_hypothesis": "A privacy-bounded weekly loop compensates for slow configuration drift and otherwise lost lessons across separate Codex tasks.",
       "paths": [
         "automations/harness/automation.toml.template",
-        "docs/job-state.md",
-        "scripts/new-job-state.ps1"
+        "docs/weekly-learning.md",
+        "scripts/invoke-weekly-harness-learning.ps1"
       ],
       "evidence": [
-        "scripts/harness-health.ps1"
+        "scripts/harness-health.ps1",
+        "harness-evals/test-weekly-harness-learning.ps1"
       ],
       "cost": {
         "level": "low",
         "drivers": [
           "scheduled execution",
-          "review of bounded findings"
+          "review of bounded findings, current public sources, and explicit approval proposals"
         ]
       },
       "risk": {
         "level": "medium",
         "drivers": [
           "stale schedule assumptions",
-          "unbounded repair scope"
+          "privacy leakage or unbounded repair scope"
         ]
       },
       "status": "active",
       "status_since": "2026-08-04",
       "review": {
-        "cadence_days": 90,
+        "cadence_days": 30,
         "last_reviewed": "2026-08-04"
       },
       "retirement_criteria": [
@@ -256,7 +265,8 @@
         "scripts"
       ],
       "evidence": [
-        "scripts/verify-global-harness.ps1"
+        "scripts/verify-global-harness.ps1",
+        "harness-evals/run-harness-evals.ps1"
       ],
       "cost": {
         "level": "medium",

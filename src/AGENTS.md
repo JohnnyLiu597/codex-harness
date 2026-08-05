@@ -220,7 +220,9 @@ the standard scaffold.
   turn it into a default hook.
 - Use `scripts/invoke-verification-envelope.ps1` when a high-value check needs
   source, test, grader, output, environment, timeout, and protected-path
-  evidence. Do not store raw command output in the envelope.
+  evidence. Require the paths that matter, keep input before/after hashes
+  stable, and separate declared policy from observed evidence. Do not store raw
+  command output in the envelope.
 - Use `scripts/summarize-trace-evals.ps1` to compare recent trace eval runs and
   repeated failures.
 - Use `scripts/new-tool-failure.ps1` when tool failures affect a task or repeat.
@@ -235,10 +237,22 @@ the standard scaffold.
   `scripts/new-session-summary.ps1`.
 - For delegated or isolated worker tasks, use `artifacts/templates/agent-task.md`
   plus `scripts/new-agent-run.ps1` to record the worker contract and result.
+- For substantial work with independent research, exploration, testing, review,
+  or implementation branches, use native Codex subagents when they materially
+  improve speed, context isolation, specialization, or checker independence.
+  Treat a bounded qualifying branch as a default delegation target when native
+  subagent tooling is available; keep it local only when coordination cost or
+  dependency coupling outweighs the benefit.
+  Keep immediate blockers and final integration in the parent task; do not
+  delegate tiny, tightly coupled, or coordination-heavy work.
+- Choose the smallest topology in `harness-orchestrator`: serial pipeline,
+  fan-out/fan-in, supervisor-workers, or a bounded evaluator-optimizer loop.
 - Keep custom agents as standalone `agents/*.toml` definitions with `name`,
-  `description`, and `developer_instructions`. Prefer active-model inheritance
-  over stale model pins, and do not require unpublished `config.toml` role
-  declarations for the source package.
+  `description`, and `developer_instructions`. Omit reusable model and reasoning
+  pins so Codex can adapt to task difficulty. Use a spawn-time override only
+  with an explicit complexity, risk, latency, cost, or eval rationale, and do
+  not require unpublished `config.toml` role declarations for the source
+  package.
 - For native Goal, subagent, worktree, scheduled, event-driven, or manual work
   that must resume, use `scripts/new-job-state.ps1` as a state adapter. It
   records observed state and does not create a second scheduler or agent
@@ -324,9 +338,11 @@ the standard scaffold.
 ## Harness Health
 
 - Use `~/.codex/scripts/verify-global-harness.ps1` after global Codex config,
-  skill, hook, template, or script changes.
-- Use `~/.codex/harness-evals/run-harness-evals.ps1` for deterministic harness
-  regression checks.
+  skill, hook, template, or script changes. It owns static/runtime health,
+  config/CLI compatibility, and hook wiring/hash checks; it does not own
+  deterministic behavior cases.
+- Use `~/.codex/harness-evals/run-harness-evals.ps1` as the single owner for
+  deterministic harness regression checks.
 - Use `~/.codex/harness-evals/run-trace-evals.ps1 -DryRun` to check real-task
   trace-eval plumbing before spending model quota on live eval runs.
 - Use `~/.codex/scripts/harness-health.ps1` for a manual health report.
@@ -345,6 +361,9 @@ the standard scaffold.
 - Lifecycle hooks should stay silent, bounded, local-only, and metadata-only.
   They may write summaries under `~/.codex/hook-logs/`, but should not store
   raw prompts, commands, patches, tool output, transcripts, or payload values.
+- After a hook definition changes, automatic checks can verify its definition
+  hash and wrapper/router wiring, but the user must still review the new hash
+  through Codex `/hooks` when trust is requested.
 
 ## Operating Model
 

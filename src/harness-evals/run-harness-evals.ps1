@@ -1,29 +1,85 @@
 param(
-    [string]$CodexHome = "$env:USERPROFILE\.codex"
+    [string]$CodexHome = "$env:USERPROFILE\.codex",
+    [string[]]$EvalName = @(),
+    [switch]$AllowFailures,
+    [switch]$KeepFailedArtifacts
 )
 
 $ErrorActionPreference = "Stop"
 
+$runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $codexHomePath = (Resolve-Path -LiteralPath $CodexHome).Path
-$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$runId = ((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssfffZ")) + "-$PID-" + [guid]::NewGuid().ToString("N").Substring(0, 12)
 $runRoot = Join-Path $codexHomePath "harness-evals\runs"
-$runDir = Join-Path $runRoot $stamp
+$runDir = Join-Path $runRoot $runId
 $jsonPath = Join-Path $runDir "evals.json"
 $summaryPath = Join-Path $runDir "summary.md"
 $results = New-Object System.Collections.Generic.List[object]
+$script:activeEvalTempRoots = New-Object System.Collections.Generic.List[string]
+$script:retainedTempRoots = New-Object System.Collections.Generic.List[string]
 
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+
+function New-EvalTempRoot {
+    param([Parameter(Mandatory = $true)][string]$Prefix)
+
+    $tempBase = [System.IO.Path]::GetFullPath($env:TEMP).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $name = $Prefix + (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssfffZ") + "-$PID-" + [guid]::NewGuid().ToString("N").Substring(0, 10)
+    $path = Join-Path $tempBase $name
+    New-Item -ItemType Directory -Force -Path $path | Out-Null
+    $resolved = (Resolve-Path -LiteralPath $path).Path
+    $script:activeEvalTempRoots.Add($resolved) | Out-Null
+    return $resolved
+}
+
+function Remove-EvalTempRoot {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
+    $tempBase = [System.IO.Path]::GetFullPath($env:TEMP).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $resolved = [System.IO.Path]::GetFullPath($Path).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $prefix = $tempBase + [System.IO.Path]::DirectorySeparatorChar
+    $leaf = Split-Path -Leaf $resolved
+    if (-not $resolved.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) -or $leaf -notmatch '^codex-[A-Za-z0-9-]+-eval-') {
+        throw "Refusing to clean a path outside the harness eval TEMP boundary."
+    }
+    foreach ($item in @(Get-ChildItem -LiteralPath $resolved -Force -Recurse -ErrorAction SilentlyContinue)) {
+        try { $item.IsReadOnly = $false } catch { }
+    }
+    [System.IO.Directory]::Delete($resolved, $true)
+}
+
+function Get-EvalFailureClass {
+    param([System.Management.Automation.ErrorRecord]$ErrorRecord)
+
+    $message = [string]$ErrorRecord.Exception.Message
+    if ($message -match '(?i)timeout|timed out') { return "timeout" }
+    if ($message -match '(?i)not found|missing') { return "missing-dependency" }
+    if ($ErrorRecord.Exception -is [System.Management.Automation.CommandNotFoundException]) { return "command-not-found" }
+    return "assertion"
+}
 
 function Add-EvalResult {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $true)][string]$Status,
-        [string]$Detail = ""
+        [string]$Detail = "",
+        [string]$FailureClass = "none",
+        [int]$DurationMs = 0,
+        [int]$TempRootCount = 0,
+        [int]$TempRootsCleaned = 0,
+        [string[]]$TempRootsRetained = @()
     )
     $results.Add([pscustomobject]@{
         name = $Name
         status = $Status
         detail = $Detail
+        failure_class = $FailureClass
+        attempt = 1
+        duration_ms = $DurationMs
+        temp_root_count = $TempRootCount
+        temp_roots_cleaned = $TempRootsCleaned
+        temp_roots_retained = @($TempRootsRetained)
     }) | Out-Null
 }
 
@@ -33,16 +89,55 @@ function Invoke-Eval {
         [Parameter(Mandatory = $true)][scriptblock]$Script
     )
 
+    if ($EvalName.Count -gt 0 -and @($EvalName | Where-Object { $_ -ieq $Name }).Count -eq 0) { return }
+
+    $script:activeEvalTempRoots = New-Object System.Collections.Generic.List[string]
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $status = "passed"
+    $failureClass = "none"
+    $detail = ""
     try {
-        $detail = & $Script
-        Add-EvalResult -Name $Name -Status "passed" -Detail ([string]$detail)
+        $detail = ((& $Script) | Out-String).Trim()
     } catch {
-        Add-EvalResult -Name $Name -Status "failed" -Detail $_.Exception.Message
+        $status = "failed"
+        $failureClass = Get-EvalFailureClass -ErrorRecord $_
+        $detail = $_.Exception.Message
+    } finally {
+        $stopwatch.Stop()
+        $tempRoots = @($script:activeEvalTempRoots.ToArray())
+        $cleaned = 0
+        $retained = New-Object System.Collections.Generic.List[string]
+        $cleanupFailures = 0
+
+        foreach ($tempRoot in $tempRoots) {
+            if ($status -eq "failed" -and $KeepFailedArtifacts) {
+                $retained.Add($tempRoot) | Out-Null
+                $script:retainedTempRoots.Add($tempRoot) | Out-Null
+                continue
+            }
+            try {
+                Remove-EvalTempRoot -Path $tempRoot
+                $cleaned++
+            } catch {
+                $cleanupFailures++
+                $retained.Add($tempRoot) | Out-Null
+                $script:retainedTempRoots.Add($tempRoot) | Out-Null
+            }
+        }
+
+        if ($cleanupFailures -gt 0) {
+            $status = "failed"
+            $failureClass = "cleanup"
+            $detail = (($detail, "TEMP cleanup failed for $cleanupFailures root(s).") | Where-Object { $_ }) -join " "
+        }
+
+        Add-EvalResult -Name $Name -Status $status -Detail $detail -FailureClass $failureClass `
+            -DurationMs ([int][Math]::Round($stopwatch.Elapsed.TotalMilliseconds)) -TempRootCount $tempRoots.Count `
+            -TempRootsCleaned $cleaned -TempRootsRetained $retained.ToArray()
     }
 }
 
 Invoke-Eval -Name "global-config" -Script {
-    & (Join-Path $codexHomePath "scripts\verify-global-harness.ps1") -CodexHome $codexHomePath | Out-Null
     $agents = Get-Content -LiteralPath (Join-Path $codexHomePath "AGENTS.md") -Raw
     foreach ($required in @(
         @{ Name = "reasoning budget"; Pattern = "Spend reasoning budget on the task" },
@@ -53,7 +148,7 @@ Invoke-Eval -Name "global-config" -Script {
             throw "global AGENTS.md is missing quiet commentary guidance: $($required.Name)"
         }
     }
-    "global config and script syntax verified"
+    "global guidance invariants verified without owning the global verifier"
 }
 
 Invoke-Eval -Name "optimizer-workflow-routing" -Script {
@@ -61,6 +156,13 @@ Invoke-Eval -Name "optimizer-workflow-routing" -Script {
     $result = $raw | ConvertFrom-Json
     if ($result.status -ne "success") { throw "project-harness-optimizer self-test failed" }
     "project-harness-optimizer routes lanes, lifecycle, context, agents, state, verification, learning, evolution, web intake, and release closure"
+}
+
+Invoke-Eval -Name "weekly-harness-learning" -Script {
+    $raw = & (Join-Path $codexHomePath "harness-evals\test-weekly-harness-learning.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "weekly harness learning self-test failed" }
+    "weekly learning sanitized task evidence, deduplicated state, and enforced the automatic-change gate"
 }
 
 Invoke-Eval -Name "web-source-resolver" -Script {
@@ -122,8 +224,7 @@ Invoke-Eval -Name "article-source-resolver" -Script {
 }
 
 Invoke-Eval -Name "project-scaffold" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-harness-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-harness-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "HarnessEval" -MajorChange -PlanName "eval" | Out-Null
     $expected = @(
         "AGENTS.md",
@@ -243,8 +344,7 @@ Invoke-Eval -Name "project-scaffold" -Script {
 }
 
 Invoke-Eval -Name "maturity-layer" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-maturity-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-maturity-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "MaturityEval" | Out-Null
     & (Join-Path $tmpRoot "scripts\check-features.ps1") | Out-Null
     & (Join-Path $tmpRoot "scripts\check-tool-evals.ps1") | Out-Null
@@ -271,8 +371,7 @@ Invoke-Eval -Name "maturity-layer" -Script {
 }
 
 Invoke-Eval -Name "job-state-adapter" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-job-state-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-job-state-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "JobStateEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-job-state.ps1"
     $count = 0
@@ -306,8 +405,7 @@ Invoke-Eval -Name "job-state-adapter" -Script {
 }
 
 Invoke-Eval -Name "context-and-component-evolution" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-component-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-component-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "ComponentEval" | Out-Null
 
     $context = (& (Join-Path $tmpRoot "scripts\audit-context-budget.ps1") -ProjectRoot $tmpRoot -CodexHome $codexHomePath) | ConvertFrom-Json
@@ -348,16 +446,20 @@ Invoke-Eval -Name "trace-summary" -Script {
 }
 
 Invoke-Eval -Name "tool-failure-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-tool-failure-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-tool-failure-eval-"
     $tmpRoot = (Resolve-Path -LiteralPath $tmpRoot).Path
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "ToolFailureEval" | Out-Null
-    $raw = & (Join-Path $tmpRoot "scripts\new-tool-failure.ps1") -Tool "playwright" -FailureType "timeout" -Summary "eval tool failure" -Operation "open page" -Error "timeout" -Recovery "retry with snapshot" -Evidence @("log")
-    $json = $raw | ConvertFrom-Json
+    $toolFailureScript = Join-Path $tmpRoot "scripts\new-tool-failure.ps1"
+    $processOutput = @(& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $toolFailureScript `
+        -ProjectRoot $tmpRoot -Tool "fixture-tool" -FailureType "timeout" -Summary "eval tool failure" `
+        -Operation "open page" -Error "timeout" -Recovery "retry with snapshot" -Evidence "log" 2>&1)
+    $processExit = $LASTEXITCODE
+    if ($processExit -ne 0) { throw "new-tool-failure failed in an independent PowerShell process" }
+    $json = ($processOutput -join "`n") | ConvertFrom-Json
     foreach ($artifact in $json.artifacts) {
         if (-not (Test-Path -LiteralPath $artifact)) { throw "tool failure artifact missing: $artifact" }
     }
-    "new-tool-failure created tool failure evidence"
+    "new-tool-failure created tool failure evidence from an independent PowerShell process"
 }
 
 Invoke-Eval -Name "skill-surface-stocktake" -Script {
@@ -373,36 +475,14 @@ Invoke-Eval -Name "skill-surface-stocktake" -Script {
 }
 
 Invoke-Eval -Name "verification-gate" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-verification-gate-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
-    $tmpRoot = (Resolve-Path -LiteralPath $tmpRoot).Path
-    & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "VerificationGateEval" | Out-Null
-
-    foreach ($mode in @("DocsOnly", "HarnessOnly")) {
-        $raw = & (Join-Path $tmpRoot "scripts\invoke-verification-gate.ps1") -Mode $mode -ContinueOnError
-        $json = $raw | ConvertFrom-Json
-        if ($json.status -eq "failed") {
-            throw "verification gate failed in $mode mode"
-        }
-        foreach ($artifact in $json.artifacts) {
-            if (-not (Test-Path -LiteralPath $artifact)) {
-                throw "verification gate artifact missing: $artifact"
-            }
-            if ($artifact -notmatch '\\artifacts\\verification-gates\\') {
-                throw "verification gate artifact has unexpected path: $artifact"
-            }
-        }
-        if (-not (Test-Path -LiteralPath (Join-Path $tmpRoot "artifacts\verification-gates"))) {
-            throw "verification gate directory missing under project root"
-        }
-    }
-
-    "invoke-verification-gate produced project-local gate artifacts"
+    $raw = & (Join-Path $codexHomePath "harness-evals\test-verification-gate.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "verification gate self-test failed" }
+    "verification gate preserved real process exits, bounded artifacts, and explicit mode semantics"
 }
 
 Invoke-Eval -Name "runtime-evidence-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-runtime-evidence-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-runtime-evidence-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "RuntimeEvidenceEval" | Out-Null
 
     $raw = & (Join-Path $tmpRoot "scripts\new-runtime-run.ps1") -Name "eval runtime feature proof" -Status "completed" -Summary "Runtime evidence can link back to features." -FeatureIds @("harness-001") -Commands @("verify") -Checks @("runtime check") -Evidence @("runtime observation") -UpdateFeatureEvidence
@@ -427,8 +507,7 @@ Invoke-Eval -Name "runtime-evidence-record" -Script {
 }
 
 Invoke-Eval -Name "coordination-records" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-coordination-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-coordination-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "CoordinationEval" | Out-Null
 
     $sessionRaw = & (Join-Path $tmpRoot "scripts\new-session-summary.ps1") -Name "eval handoff" -Status "handoff" -Objective "Preserve context." -Completed @("one") -Decisions @("two") -NextActions @("three") -Files @("CONTEXT.md") -Checks @("verify") -SetCurrent
@@ -466,8 +545,7 @@ Invoke-Eval -Name "coordination-records" -Script {
 }
 
 Invoke-Eval -Name "harness-change-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-harness-change-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-harness-change-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "HarnessChangeEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-harness-change.ps1"
     & $script -Name "eval harness change" -Layer "eval" -Status "completed" -Summary "eval" -Files @("scripts\check-tool-evals.ps1") -Checks @("scripts\check-tool-evals.ps1") | Out-Null
@@ -479,8 +557,7 @@ Invoke-Eval -Name "harness-change-record" -Script {
 }
 
 Invoke-Eval -Name "trace-eval-intake" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-trace-intake-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-trace-intake-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "TraceIntakeEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-trace-eval.ps1"
     $raw = & $script -Name "eval repeated failure" -Prompt "A repeated harness failure should become a regression eval." -Expected "Creates a durable eval case." -MustInclude @("trace", "eval", "evidence") -MustNotInclude @("secret") -Lane "evals"
@@ -499,8 +576,7 @@ Invoke-Eval -Name "trace-eval-intake" -Script {
 }
 
 Invoke-Eval -Name "review-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-review-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-review-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "ReviewEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-review.ps1"
     & $script -Name "eval-review" -Status "completed" -Summary "eval" -Checks @("check") -Evidence @("evidence") -Maker "maker" -Checker "checker" -VerifiedCommit "0123456789abcdef" | Out-Null
@@ -516,8 +592,7 @@ Invoke-Eval -Name "review-record" -Script {
 }
 
 Invoke-Eval -Name "goal-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-goal-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-goal-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "GoalEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-goal.ps1"
     & $script -Name "eval-goal" -Objective "Keep the generated harness goal layer verifiable." -SuccessCriteria @("goal exists") -FeatureIds @("harness-001") -SetCurrent | Out-Null
@@ -532,8 +607,7 @@ Invoke-Eval -Name "goal-record" -Script {
 }
 
 Invoke-Eval -Name "generated-smoke-record" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-smoke-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-smoke-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "SmokeEval" | Out-Null
     $script = Join-Path $tmpRoot "scripts\new-smoke-run.ps1"
     & $script -Name "eval-smoke" -Status "completed" -Summary "eval" -Checks @("check") -Evidence @("evidence") | Out-Null
@@ -545,8 +619,7 @@ Invoke-Eval -Name "generated-smoke-record" -Script {
 }
 
 Invoke-Eval -Name "safe-remove" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-safe-remove-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-safe-remove-eval-"
     $file = Join-Path $tmpRoot "remove-me.txt"
     Set-Content -LiteralPath $file -Value "safe remove eval" -Encoding UTF8
     & (Join-Path $codexHomePath "scripts\safe-remove.ps1") $file -TrashRoot (Join-Path $tmpRoot ".codex-trash") | Out-Null
@@ -561,8 +634,7 @@ Invoke-Eval -Name "safe-remove" -Script {
 }
 
 Invoke-Eval -Name "docs-sync" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-docs-sync-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+    $tmpRoot = New-EvalTempRoot -Prefix "codex-docs-sync-eval-"
     & (Join-Path $codexHomePath "scripts\init-project-harness.ps1") -Root $tmpRoot -ProjectName "DocsSyncEval" | Out-Null
     git -C $tmpRoot init | Out-Null
     git -C $tmpRoot config user.email "codex@example.local" | Out-Null
@@ -588,71 +660,35 @@ Invoke-Eval -Name "verification-envelope" -Script {
     $raw = & (Join-Path $codexHomePath "harness-evals\test-verification-envelope.ps1") -CodexHome $codexHomePath
     $result = $raw | ConvertFrom-Json
     if ($result.status -ne "success") { throw "verification envelope self-test failed" }
-    "verification envelope passed source/test/grader/environment hash, tamper, and timeout checks"
+    "verification envelope passed required evidence, before/after hash, stale-input, timeout, cleanup, and policy/evidence separation checks"
 }
 
-Invoke-Eval -Name "trace-eval-dryrun" -Script {
-    $traceRaw = & (Join-Path $codexHomePath "harness-evals\run-trace-evals.ps1") -CodexHome $codexHomePath -DryRun
-    $trace = $traceRaw | ConvertFrom-Json
-    if (-not $trace.dry_run) {
-        throw "trace eval dry run did not report dry_run=true"
-    }
-    foreach ($artifact in $trace.artifacts) {
-        if (-not (Test-Path -LiteralPath $artifact)) {
-            throw "trace eval artifact missing: $artifact"
-        }
-    }
-    "run-trace-evals.ps1 produced dry-run trace artifacts"
-}
-
-Invoke-Eval -Name "trace-artifact-privacy" -Script {
-    $tmpRoot = Join-Path $env:TEMP ("codex-trace-privacy-eval-" + (Get-Date -Format "yyyyMMddHHmmssfff"))
-    $runsRoot = Join-Path $tmpRoot "runs"
-    New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
-    $promptMarker = "raw-prompt-marker-4ebfbc26"
-    $expectedMarker = "raw-expected-marker-b29c1b0f"
-    $promptFile = Join-Path $tmpRoot "prompts.csv"
-    [pscustomobject]@{
-        id = "privacy-case"
-        enabled = "true"
-        lane = "privacy"
-        prompt = $promptMarker
-        expected = $expectedMarker
-        must_include = "verification"
-        must_not_include = "credential"
-        min_score = "70"
-    } | Export-Csv -LiteralPath $promptFile -NoTypeInformation -Encoding UTF8
-
-    $raw = & (Join-Path $codexHomePath "harness-evals\run-trace-evals.ps1") -CodexHome $codexHomePath -PromptFile $promptFile -RunsRoot $runsRoot -DryRun
-    $json = $raw | ConvertFrom-Json
-    $persisted = (Get-ChildItem -LiteralPath $runsRoot -Recurse -File | ForEach-Object {
-        Get-Content -LiteralPath $_.FullName -Raw -ErrorAction SilentlyContinue
-    }) -join "`n"
-    foreach ($marker in @($promptMarker, $expectedMarker)) {
-        if ($persisted -match [regex]::Escape($marker)) {
-            throw "trace eval artifacts duplicated raw prompt or expected text"
-        }
-    }
-
-    $manifest = Get-Content -LiteralPath $json.manifests.result -Raw | ConvertFrom-Json
-    $result = @($manifest.results)[0]
-    if ($result.PSObject.Properties.Name -contains "prompt" -or $result.PSObject.Properties.Name -contains "expected") {
-        throw "trace eval manifest contains raw prompt or expected fields"
-    }
-    if (-not $result.prompt_sha256 -or -not $result.expected_sha256) {
-        throw "trace eval manifest is missing prompt or expected hashes"
-    }
-    "trace eval dry-run artifacts retain hashes and expectation terms without duplicating raw prompt text"
+Invoke-Eval -Name "trace-evals-v3" -Script {
+    $raw = & (Join-Path $codexHomePath "harness-evals\test-trace-evals-v3.ps1") -CodexHome $codexHomePath
+    $result = $raw | ConvertFrom-Json
+    if ($result.status -ne "success") { throw "trace eval v3 self-test failed" }
+    "trace eval v3 passed final-message grading, privacy, attempts/duration/failure classes, timeout cleanup, status propagation, TEMP cleanup, and unique run checks"
 }
 
 $failed = @($results | Where-Object { $_.status -eq "failed" })
-$status = if ($failed.Count -gt 0) { "failed" } else { "passed" }
+$runStatus = if ($failed.Count -gt 0) { "failed" } else { "passed" }
+$topStatus = if ($runStatus -eq "failed") { "failed" } else { "success" }
+$runStopwatch.Stop()
+$durationMs = [int][Math]::Round($runStopwatch.Elapsed.TotalMilliseconds)
+$retainedTempRoots = @($script:retainedTempRoots.ToArray())
 
 $record = [pscustomobject]@{
-    schema = "codex-harness-evals-v1"
-    status = $status
+    schema = "codex-harness-evals-v3"
+    run_id = $runId
+    status = $topStatus
+    run_status = $runStatus
     created_at = (Get-Date).ToString("o")
+    duration_ms = $durationMs
     codex_home = $codexHomePath
+    selected_evals = @($EvalName)
+    keep_failed_artifacts = [bool]$KeepFailedArtifacts
+    retained_temp_roots = $retainedTempRoots
+    failure_classes = @($failed | Select-Object -ExpandProperty failure_class -Unique)
     results = $results.ToArray()
 }
 
@@ -667,9 +703,12 @@ $resultLines = if ($results.Count -gt 0) {
 $md = @"
 # Codex Harness Evals
 
-- Status: $status
+- Run ID: $runId
+- Status: $runStatus
 - Created: $((Get-Date).ToString("yyyy-MM-dd HH:mm:ss"))
+- Duration ms: $durationMs
 - Codex home: $codexHomePath
+- Retained TEMP roots: $($retainedTempRoots.Count)
 
 ## Results
 
@@ -682,12 +721,18 @@ $resultLines
 
 Set-Content -LiteralPath $summaryPath -Value $md -Encoding UTF8
 
-if ($failed.Count -gt 0) {
+if ($failed.Count -gt 0 -and -not $AllowFailures) {
     throw "Harness evals failed: $($failed.name -join ', ')"
 }
 
 [ordered]@{
-    status = "success"
-    summary = "Codex harness evals passed."
+    status = $topStatus
+    run_status = $runStatus
+    summary = if ($runStatus -eq "passed") { "Codex harness evals passed." } else { "Codex harness evals completed with failures." }
+    run_id = $runId
+    duration_ms = $durationMs
+    failure_classes = $record.failure_classes
+    retained_temp_roots = $retainedTempRoots
+    results = $results.ToArray()
     artifacts = @($jsonPath, $summaryPath)
-} | ConvertTo-Json -Depth 5 -Compress
+} | ConvertTo-Json -Depth 10 -Compress

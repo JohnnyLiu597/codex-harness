@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event SessionStart",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event SessionStart\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event SessionStart'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event SessionStart\"",
             "timeout": 8,
             "additionalContextLimit": 500
           }
@@ -17,12 +17,12 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "^(Bash|apply_patch|Edit|Write)$",
+        "matcher": "^.*$",
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event PreToolUse",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event PreToolUse\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event PreToolUse'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event PreToolUse\"",
             "timeout": 8
           }
         ]
@@ -30,12 +30,12 @@
     ],
     "PermissionRequest": [
       {
-        "matcher": "^(Bash|apply_patch|Edit|Write)$",
+        "matcher": "^.*$",
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event PermissionRequest",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event PermissionRequest\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event PermissionRequest'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event PermissionRequest\"",
             "timeout": 8
           }
         ]
@@ -47,8 +47,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event PostToolUse",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event PostToolUse\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event PostToolUse'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event PostToolUse\"",
             "timeout": 8
           }
         ]
@@ -59,8 +59,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event PreCompact",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event PreCompact\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event PreCompact'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event PreCompact\"",
             "timeout": 8
           }
         ]
@@ -71,8 +71,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event PostCompact",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event PostCompact\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event PostCompact'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event PostCompact\"",
             "timeout": 8
           }
         ]
@@ -83,8 +83,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event UserPromptSubmit",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event UserPromptSubmit\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event UserPromptSubmit'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event UserPromptSubmit\"",
             "timeout": 8
           }
         ]
@@ -95,8 +95,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event SubagentStart",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event SubagentStart\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event SubagentStart'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event SubagentStart\"",
             "timeout": 8,
             "additionalContextLimit": 500
           }
@@ -108,8 +108,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event SubagentStop",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event SubagentStop\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event SubagentStop'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event SubagentStop\"",
             "timeout": 8
           }
         ]
@@ -120,8 +120,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event Stop",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event Stop\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event Stop'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event Stop\"",
             "timeout": 8
           }
         ]
@@ -132,8 +132,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$HOME/.codex/scripts/codex-hook.ps1\" -Event SessionEnd",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:USERPROFILE '.codex\\scripts\\codex-hook.ps1') -Event SessionEnd\"",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event SessionEnd'",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event SessionEnd\"",
             "timeout": 3
           }
         ]
