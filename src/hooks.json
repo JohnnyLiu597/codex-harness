@@ -126,18 +126,6 @@
           }
         ]
       }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -Command '$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME \".codex\" }; & (Join-Path $codexHome \"scripts/codex-hook.ps1\") -Event SessionEnd'",
-            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; & (Join-Path $codexHome 'scripts\\codex-hook.ps1') -Event SessionEnd\"",
-            "timeout": 3
-          }
-        ]
-      }
     ]
   }
 }

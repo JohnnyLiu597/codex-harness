@@ -147,12 +147,14 @@ foreach ($relative in @(
 }
 
 $hooks = Get-Content -LiteralPath (Join-Path $codexHomePath "hooks.json") -Raw -Encoding UTF8 | ConvertFrom-Json
-foreach ($eventName in @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")) {
+$requiredHookEvents = @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop")
+foreach ($eventName in $requiredHookEvents) {
     if ($hooks.hooks.PSObject.Properties.Name -notcontains $eventName) {
         throw "hooks.json is missing $eventName"
     }
 }
-Add-Check -Name "hooks-json" -Status "passed" -Detail "official lifecycle events configured"
+$sessionEndStatus = if ($hooks.hooks.PSObject.Properties.Name -contains "SessionEnd") { "configured" } else { "optional-omitted" }
+Add-Check -Name "hooks-json" -Status "passed" -Detail "required Desktop-reviewable lifecycle events configured; SessionEnd=$sessionEndStatus"
 
 $preToolMatchers = @($hooks.hooks.PreToolUse | ForEach-Object { [string]$_.matcher })
 if (@($preToolMatchers | Where-Object { $_ -in @('.*', '^.*$') }).Count -eq 0) {

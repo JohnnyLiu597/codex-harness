@@ -52,6 +52,11 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-08-05: Aligned default hook trust with the Codex Desktop review surface.
+  `SessionEnd` remains supported by the router but is omitted from the default
+  definition while the active Desktop hook browser cannot display it for
+  explicit review. Runtime and package checks now treat it as optional and
+  never bypass trust by writing approval hashes manually.
 - 2026-08-05: Upgraded hooks and verification to v3. Verification completion
   is now causally paired to one tool invocation and one stable workspace
   fingerprint; gate and envelope records preserve real process exits, bounded

@@ -39,7 +39,9 @@ Hooks are thin and deterministic:
 - `SubagentStart`: inject a bounded ownership, check, and handoff contract.
 - `SubagentStop` and `Stop`: emit valid JSON. Stop may request one bounded
   verification continuation after tracked edits.
-- `SessionEnd`: advisory metadata only.
+- `SessionEnd`: the router supports advisory metadata, but the default user
+  hook definition omits this event until the active Codex Desktop hook browser
+  can display it for explicit trust review.
 
 Hook artifacts contain event metadata and hashes, never prompt text, commands,
 patches, tool output, assistant messages, transcripts, or secrets. Hooks are a
@@ -47,6 +49,9 @@ guardrail, not a complete security boundary.
 
 Changed non-managed hook definitions require a one-time trust review through
 Codex `/hooks`. The trust record is tied to the definition hash.
+Never bypass trust by writing a hash manually. If the active hook browser
+cannot display an event, omit that event from the installed definition while
+keeping dormant router support when it remains useful for future versions.
 
 ## Verification State
 

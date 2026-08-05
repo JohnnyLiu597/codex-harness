@@ -225,13 +225,15 @@ $hooksPath = Join-Path $srcRoot "hooks.json"
 if (Test-Path -LiteralPath $hooksPath -PathType Leaf) {
     $hooksRaw = Get-Content -LiteralPath $hooksPath -Raw -Encoding UTF8
     $hooks = $hooksRaw | ConvertFrom-Json
-    $requiredHookEvents = @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")
+    $requiredHookEvents = @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop")
     $missingHookEvents = @($requiredHookEvents | Where-Object { $hooks.hooks.PSObject.Properties.Name -notcontains $_ })
     if ($missingHookEvents.Count -eq 0) {
-        Add-Check -Name "hooks-lifecycle-surface" -Status "passed" -Detail "required lifecycle events present"
+        Add-Check -Name "hooks-lifecycle-surface" -Status "passed" -Detail "required Desktop-reviewable lifecycle events present"
     } else {
         Add-Check -Name "hooks-lifecycle-surface" -Status "failed" -Detail ("missing: " + ($missingHookEvents -join ", "))
     }
+    $sessionEndStatus = if ($hooks.hooks.PSObject.Properties.Name -contains "SessionEnd") { "configured" } else { "optional-omitted" }
+    Add-Check -Name "hooks-optional-session-end" -Status "passed" -Detail $sessionEndStatus
     if ($hooksRaw -match 'C:\\Users\\' -or $hooksRaw -match 'auth\.json|config\.toml|bearer_token|api[_-]?key') {
         Add-Check -Name "hooks-public-readiness" -Status "failed" -Detail "hooks contain a machine-local path or secret-adjacent field"
     } else {

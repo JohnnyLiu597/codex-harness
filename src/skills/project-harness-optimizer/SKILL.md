@@ -104,6 +104,9 @@ evolution.
   loop.
 - Treat hooks as a useful guardrail, not the complete enforcement boundary.
 - Ensure `Stop` and `SubagentStop` emit valid JSON when they exit successfully.
+- Keep router support separate from installed definitions. If the active Codex
+  Desktop hook browser cannot display an event for explicit trust review, omit
+  it from the default `hooks.json` instead of bypassing trust.
 - After changing hook definitions, run the workflow-core self-test and expect a
   one-time trust review through Codex `/hooks` for the new definition hash.
 

@@ -370,11 +370,15 @@ try {
 $hooksPath = Join-Path $codexHomePath "hooks.json"
 $hooks = Get-Content -LiteralPath $hooksPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $hookDefinitionSha256 = (Get-FileHash -LiteralPath $hooksPath -Algorithm SHA256).Hash.ToLowerInvariant()
-foreach ($eventName in @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop", "SessionEnd")) {
+$requiredHookEvents = @("SessionStart", "PreToolUse", "PermissionRequest", "PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit", "SubagentStart", "SubagentStop", "Stop")
+foreach ($eventName in $requiredHookEvents) {
     if ($hooks.hooks.PSObject.Properties.Name -notcontains $eventName) {
         throw "hooks.json is missing required lifecycle event: $eventName"
     }
-    foreach ($group in @($hooks.hooks.$eventName)) {
+}
+foreach ($eventProperty in $hooks.hooks.PSObject.Properties) {
+    $eventName = $eventProperty.Name
+    foreach ($group in @($eventProperty.Value)) {
         foreach ($hook in @($group.hooks)) {
             if ([string]$hook.command -notmatch 'CODEX_HOME' -or [string]$hook.commandWindows -notmatch 'CODEX_HOME') {
                 throw "Hook wiring for $eventName does not honor CODEX_HOME on both command paths."

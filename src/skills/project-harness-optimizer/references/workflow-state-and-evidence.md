@@ -28,7 +28,7 @@ Recommended hook responsibilities:
 | `SubagentStart` | inject a concise ownership/check/handoff contract |
 | `SubagentStop` | emit valid JSON; continue only with a bounded reason |
 | `Stop` | request at most one verification continuation after tracked edits |
-| `SessionEnd` | advisory metadata only |
+| `SessionEnd` | optional advisory metadata; omit from the default definition when the active Desktop hook browser cannot display it for explicit trust review |
 
 Hook logs may include event, timestamp, cwd, branch, commit, changed-file count,
 payload keys, byte length, payload hash, tool name, hashed tool-use ID,
