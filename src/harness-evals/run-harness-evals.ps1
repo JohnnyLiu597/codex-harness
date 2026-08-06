@@ -32,6 +32,26 @@ function New-EvalTempRoot {
     return $resolved
 }
 
+function Resolve-CodexCommand {
+    $candidates = New-Object System.Collections.Generic.List[string]
+    $bundled = Join-Path $env:LOCALAPPDATA "OpenAI\Codex\bin\codex.exe"
+    if (Test-Path -LiteralPath $bundled -PathType Leaf) {
+        $candidates.Add($bundled) | Out-Null
+    }
+    foreach ($command in @(Get-Command codex -All -ErrorAction SilentlyContinue)) {
+        if ($command.Source -and -not $candidates.Contains([string]$command.Source)) {
+            $candidates.Add([string]$command.Source) | Out-Null
+        }
+    }
+    foreach ($candidate in $candidates) {
+        try {
+            & $candidate --version *> $null
+            if ($LASTEXITCODE -eq 0) { return $candidate }
+        } catch { }
+    }
+    return $null
+}
+
 function Remove-EvalTempRoot {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -142,13 +162,45 @@ Invoke-Eval -Name "global-config" -Script {
     foreach ($required in @(
         @{ Name = "reasoning budget"; Pattern = "Spend reasoning budget on the task" },
         @{ Name = "optional commentary"; Pattern = "Do not send optional commentary" },
-        @{ Name = "meaningful state updates"; Pattern = "short,\s+factual,\s+and\s+tied\s+to\s+meaningful\s+state\s+changes" }
+        @{ Name = "meaningful state updates"; Pattern = "short,\s+factual,\s+and\s+tied\s+to\s+meaningful\s+state\s+changes" },
+        @{ Name = "Desktop preference boundary"; Pattern = "operator's current task default" }
     )) {
         if ($agents -notmatch $required.Pattern) {
             throw "global AGENTS.md is missing quiet commentary guidance: $($required.Name)"
         }
     }
-    "global guidance invariants verified without owning the global verifier"
+    "global guidance and Desktop-versus-reusable model selection boundaries verified"
+}
+
+Invoke-Eval -Name "tool-routing-policy" -Script {
+    $agents = Get-Content -LiteralPath (Join-Path $codexHomePath "AGENTS.md") -Raw
+    $toolSurface = Get-Content -LiteralPath (Join-Path $codexHomePath "docs\tool-surface.md") -Raw
+
+    foreach ($required in @(
+        @{ Name = "model-neutral routing"; Pattern = "regardless of the selected model" },
+        @{ Name = "outcome metric"; Pattern = "not for a higher MCP call count" },
+        @{ Name = "current research"; Pattern = "Web or Exa" },
+        @{ Name = "library documentation"; Pattern = "Context7" },
+        @{ Name = "GitHub precedence"; Pattern = "connected GitHub app first" },
+        @{ Name = "browser split"; Pattern = "Playwright CLI or a repo test suite" },
+        @{ Name = "evidence trigger"; Pattern = "freshness, login state, visual state, exact remote state" }
+    )) {
+        if ($agents -notmatch $required.Pattern) {
+            throw "global AGENTS.md is missing task-based tool routing: $($required.Name)"
+        }
+    }
+    foreach ($required in @(
+        "Connected GitHub app",
+        'Local GitHub MCP or `gh`',
+        "existing signed-in session",
+        "persistent, isolated, or explicitly authorized extension mode"
+    )) {
+        if (-not $toolSurface.Contains($required)) {
+            throw "docs/tool-surface.md is missing routing guidance: $required"
+        }
+    }
+
+    "task-based tool routing is model-neutral, evidence-led, and explicit about browser and GitHub precedence"
 }
 
 Invoke-Eval -Name "optimizer-workflow-routing" -Script {
@@ -320,6 +372,15 @@ Invoke-Eval -Name "project-scaffold" -Script {
     if ($missing.Count -gt 0) {
         throw "missing scaffold files: $($missing -join ', ')"
     }
+    $codexCli = Resolve-CodexCommand
+    if (-not $codexCli) {
+        throw "no executable Codex CLI is available to validate the generated rules file"
+    }
+    $rulesPath = Join-Path $tmpRoot ".codex\rules\default.rules"
+    $ruleProbe = (& $codexCli execpolicy check --pretty --rules $rulesPath -- git status 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "generated rules file failed Codex parsing: $ruleProbe"
+    }
     $testing = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\testing.md") -Raw
     $smoke = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\smoke.md") -Raw
     $loop = Get-Content -LiteralPath (Join-Path $tmpRoot "docs\loop.md") -Raw
@@ -340,7 +401,7 @@ Invoke-Eval -Name "project-scaffold" -Script {
             throw "loop scaffold is missing required policy text: $required"
         }
     }
-    "scaffold generated expected files plus risk-tiered verification and loop admission docs"
+    "scaffold generated expected files, parseable Codex rules, risk-tiered verification, and loop admission docs"
 }
 
 Invoke-Eval -Name "maturity-layer" -Script {

@@ -262,6 +262,8 @@ $configPresent = Test-Path -LiteralPath $configPath -PathType Leaf
 $config = ""
 $configMcpNames = @()
 $configMcpSubsections = @()
+$operatorModelDefault = $null
+$operatorReasoningDefault = $null
 
 if ($configPresent -and $python) {
     $script = @'
@@ -302,10 +304,10 @@ foreach ($jsonPath in @(
 if ($configPresent) {
     $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
     $rootConfig = [regex]::Split($config, '(?m)^\s*\[')[0]
-    if ($rootConfig -match '(?m)^\s*model\s*=' -or
-        $rootConfig -match '(?m)^\s*(model_reasoning_effort|reasoning_effort)\s*=') {
-        throw 'Global config pins model or reasoning effort; leave both unset so Codex can adapt to the task.'
-    }
+    $operatorModelMatch = [regex]::Match($rootConfig, '(?m)^\s*model\s*=\s*"([^"]+)"\s*(?:#.*)?$')
+    $operatorReasoningMatch = [regex]::Match($rootConfig, '(?m)^\s*(?:model_reasoning_effort|reasoning_effort)\s*=\s*"([^"]+)"\s*(?:#.*)?$')
+    if ($operatorModelMatch.Success) { $operatorModelDefault = $operatorModelMatch.Groups[1].Value }
+    if ($operatorReasoningMatch.Success) { $operatorReasoningDefault = $operatorReasoningMatch.Groups[1].Value }
     $configMcpNames = Get-McpServerNames -Config $config
     $configMcpSubsections = Get-McpSubsections -Config $config
     foreach ($name in @("github", "context7", "exa", "memory", "playwright", "sequential-thinking")) {
@@ -572,6 +574,11 @@ if (-not $rg -and -not (Test-Path -LiteralPath $bundledRg)) {
     config_present = $configPresent
     mcp_servers = $configMcpNames
     mcp_subsections = $configMcpSubsections
+    operator_defaults = @{
+        model = $operatorModelDefault
+        reasoning_effort = $operatorReasoningDefault
+        reusable_harness_pin = $false
+    }
     codex_cli_version = $codexCli.Version
     behavior_evals_executed = $false
     hooks = @{

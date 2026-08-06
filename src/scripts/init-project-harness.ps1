@@ -517,39 +517,81 @@ $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 & "$env:USERPROFILE\.codex\scripts\check-project-docs.ps1" -ProjectRoot $root -BaseRef $BaseRef
 '@
 
-$rules = @"
-# Codex project command rules
+$rules = @'
+# Codex project command guardrails.
+#
+# This file is parsed as Starlark. Keep human-facing project policy in
+# AGENTS.md and keep this file to machine-readable prefix rules.
 
-## Allowed by default
+prefix_rule(
+    pattern = ["git", ["commit", "push"]],
+    decision = "prompt",
+    justification = "Commit or push only after the user explicitly requests it.",
+    match = [
+        "git commit -m harness-update",
+        "git push origin main",
+    ],
+    not_match = [
+        "git status",
+    ],
+)
 
-- Read and inspect the repo.
-- Use the repo's existing install, launch, lint, build, and test commands.
-- Use the smallest meaningful verification first.
-- Reproduce feature bugs when feasible, fix them, then rerun the reproduction
-  path.
-- Use project-local docs sync checks after requested commits.
-- Use feature-list and architecture checks when available.
-- Move removals into `.codex-trash` with `scripts\safe-remove.ps1`; only the
-  user empties trash.
+prefix_rule(
+    pattern = [["npm", "pnpm", "yarn"], ["install", "add"]],
+    decision = "prompt",
+    justification = "Dependency changes can modify lockfiles and should be reviewed first.",
+    match = [
+        "npm install",
+        "pnpm add zod",
+        "yarn add zod",
+    ],
+    not_match = [
+        "npm run build",
+    ],
+)
 
-## Pause and confirm
+prefix_rule(
+    pattern = ["pip", "install"],
+    decision = "prompt",
+    justification = "Python dependency changes can modify the local environment.",
+    match = [
+        "pip install pytest",
+    ],
+    not_match = [
+        "python -m pytest",
+    ],
+)
 
-- Dependency updates that change lockfiles.
-- Repo-wide moves, deletes, or destructive cleanup commands.
-- Changes to secrets, auth material, or external tool routing.
-- Tests or UI automation requiring login, paid quota, uploads, real external
-  side effects, or user-only permissions.
-- Irreversible deletion requests.
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Use a reversible git operation because hard resets can destroy user work.",
+)
 
-## Do not do unless explicitly requested
+prefix_rule(
+    pattern = ["git", "clean"],
+    decision = "forbidden",
+    justification = "Move untracked files to .codex-trash instead of permanently deleting them.",
+)
 
-- Destructive cleanup placeholders such as `docker compose down` or
-  `rm -rf .cache/tmp`.
-- Permanent deletion with `Remove-Item -Recurse`, `rm -rf`, direct trash
-  emptying, or equivalent destructive cleanup.
-- Extra observability stacks or noisy completion notifications.
-- Commit or push without an explicit request.
-"@
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "forbidden",
+    justification = "Use scripts/safe-remove.ps1 so removals stay reversible.",
+)
+
+prefix_rule(
+    pattern = ["Remove-Item"],
+    decision = "forbidden",
+    justification = "Use scripts/safe-remove.ps1 so removals stay reversible.",
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "down"],
+    decision = "forbidden",
+    justification = "Use a non-destructive status or stop command that preserves local state.",
+)
+'@
 
 $featuresJson = @"
 {

@@ -72,10 +72,16 @@ published without leaking local state.
   fail closed and are cleaned. Bidirectional sync, direct runtime installation,
   package checks, and ignore rules now exclude nested secrets, state databases,
   logs, sessions, plugins, caches, browser state, sandbox, and TEMP directories.
-- 2026-08-04: Removed global and reusable-agent model/reasoning pins so Codex
-  can inherit or select capability per task. The active CLI configuration no
-  longer carries the incompatible global `[agents]` concurrency table or the
-  unsupported default service tier. Runtime and package verification now reject
+- 2026-08-07: Added model-neutral, evidence-led routing for current research,
+  library documentation, GitHub remote state, signed-in browser work, and
+  repeatable E2E checks. Runtime verification now distinguishes Codex Desktop's
+  persisted operator model/reasoning defaults from reusable harness pins, while
+  custom agents and automation templates remain unpinned. Playwright extension
+  authorization remains private runtime configuration and is never synced.
+- 2026-08-04: Removed reusable-agent and automation model/reasoning pins so
+  Codex can inherit or select capability per task. The active CLI configuration
+  no longer carries the incompatible global `[agents]` concurrency table or the
+  unsupported default service tier. Runtime and package verification reject
   fixed reusable roles, probe the installed CLI schema, and require task-shaped
   delegation with reality-anchored maker-checker closure.
 - 2026-08-04: Added a privacy-bounded weekly harness learning loop. It reviews

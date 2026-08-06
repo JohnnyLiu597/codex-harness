@@ -7,6 +7,7 @@ auth.json
 *.pyc
 __pycache__/
 .codex-trash/
+.playwright-mcp/
 
 # Codex runtime directories that should never be published as source
 src/auth.json

@@ -15,9 +15,11 @@ available.
 | Web or Exa | Research | Current facts, articles, packages, docs | cited sources |
 | Article source resolver | Research | Saved HTML, article completeness, citation extraction, blocked-page diagnosis | evidence grade and structured JSON |
 | Context7 | Research | Library/API docs | cited official docs |
-| Browser or Playwright MCP | Browser runtime | Visual or interaction evidence | snapshots, screenshots, traces |
+| Browser | Browser runtime | Exploratory interaction, especially an existing signed-in session | snapshots and screenshots |
+| Playwright MCP | Browser runtime | MCP-driven browser interaction in the configured persistent, isolated, or explicitly authorized extension mode | snapshots, screenshots, traces |
 | Playwright CLI | Browser runtime | Repeatable E2E checks | test reports and traces |
-| GitHub app or `gh` | GitHub ops | Issues, PRs, CI, releases | linked issue, PR, check logs |
+| Connected GitHub app | GitHub ops | Remote repository, issue, PR, CI, and release state | linked issue, PR, check logs |
+| Local GitHub MCP or `gh` | GitHub fallback | Operations unavailable through the connected app | command result or linked remote state |
 | Docs office plugins | Optional | Documents, spreadsheets, decks | rendered artifacts |
 | Domain plugins | Optional | Project-specific work only | project docs/profile note |
 | External agent runtimes | External | Only when the user explicitly asks | install or run record |
@@ -25,10 +27,18 @@ available.
 ## Selection Rules
 
 - Prefer Codex-native scripts, MCPs, skills, and project-local docs.
+- Apply these routes regardless of the selected model. Optimize for successful
+  evidence and task completion, not for a higher MCP call count.
+- Use Web or Exa when facts may have changed; use Context7 or official docs for
+  current library and API behavior. Do not answer from memory alone when the
+  task requires fresh or exact evidence.
+- Prefer the connected GitHub app over a duplicate local GitHub MCP. Keep the
+  local MCP or `gh` as a fallback for missing operations or local git context.
 - Keep Figma, design, media, office, and other domain plugins out of the
   generic harness architecture unless a project actively needs them.
-- Use Browser or Playwright MCP for exploratory UI work; use Playwright CLI for
-  repeatable tests.
+- Use Browser for exploratory UI work with an existing signed-in session. Use
+  Playwright MCP when its configured browser mode is useful, and Playwright CLI
+  or the repo's test setup for repeatable tests.
 - Route public URLs through `web-source-resolver` in every project before
   choosing a browser or format-specific parser. Use deterministic Web mode for
   acquisition, resource detection, and render-state classification.

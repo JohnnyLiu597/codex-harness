@@ -249,9 +249,11 @@ nonces or page configuration.
 
 `config.toml` is intentionally not copied. It can contain local provider setup
 or authentication-adjacent details and should remain machine-local unless a
-sanitized template is created later. Runtime verification leaves the global
-model and reasoning effort unset, rejects reusable agent pins, and asks the
-installed Codex CLI to parse the active config so schema drift such as an
+sanitized template is created later. Codex Desktop may persist the operator's
+current top-level model and reasoning defaults; runtime verification reports
+those values without treating them as reusable harness policy. It still rejects
+model or reasoning pins in reusable agents and automation templates, and asks
+the installed Codex CLI to parse the active config so schema drift such as an
 unsupported `[agents]` shape is caught before normal work.
 
 Automation templates are source assets, not raw runtime state. The actual
