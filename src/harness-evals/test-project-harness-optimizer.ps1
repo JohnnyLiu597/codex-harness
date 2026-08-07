@@ -6,6 +6,8 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path -LiteralPath $CodexHome).Path
 $skillRoot = Join-Path $root "skills\project-harness-optimizer"
 $skillPath = Join-Path $skillRoot "SKILL.md"
+$identityPath = Join-Path $skillRoot "references\project-identity-gate.md"
+$identityCasesPath = Join-Path $root "harness-evals\cases\project-identity-gate\cases.json"
 $checks = New-Object System.Collections.Generic.List[object]
 
 function Add-Check {
@@ -36,6 +38,7 @@ Add-Check -Name "frontmatter" -Detail "name and trigger description present"
 foreach ($reference in @(
     "references\maintenance-and-safety.md",
     "references\workflow-state-and-evidence.md",
+    "references\project-identity-gate.md",
     "references\project-scaffold.md",
     "agents\openai.yaml"
 )) {
@@ -43,7 +46,68 @@ foreach ($reference in @(
         throw "Optimizer resource missing: $reference"
     }
 }
-Add-Check -Name "resources" -Detail "maintenance, workflow, scaffold, and UI metadata present"
+Add-Check -Name "resources" -Detail "maintenance, identity, workflow, scaffold, and UI metadata present"
+
+$globalAgents = Get-Content -LiteralPath (Join-Path $root "AGENTS.md") -Raw -Encoding UTF8
+$identityReference = Get-Content -LiteralPath $identityPath -Raw -Encoding UTF8
+foreach ($required in @(
+    "Project Identity Gate",
+    "Observed",
+    "Inferred",
+    "Unknown",
+    "at most three questions",
+    "architecture or",
+    "organizational",
+    "final outcome and success criteria",
+    "generated evidence",
+    "cannot validate the premise",
+    "do not write files",
+    "at most one read-only explorer",
+    'generic "continue" or "do it" does not waive'
+)) {
+    if ($identityReference -notmatch [regex]::Escape($required)) {
+        throw "Project identity reference is missing a required invariant: $required"
+    }
+}
+foreach ($required in @(
+    "Project Identity Gate",
+    "Files generated during the current task cannot confirm",
+    "at most three questions",
+    "outcome, success criteria, and allowed change scope",
+    "write files, extract or reorganize assets",
+    "Before a project identity lock, use at most one read-only explorer"
+)) {
+    if ($globalAgents -notmatch [regex]::Escape($required)) {
+        throw "Global AGENTS.md is missing project identity guidance: $required"
+    }
+}
+if ($skill.IndexOf("Project Identity Gate", [System.StringComparison]::Ordinal) -lt 0 -or
+    $skill.IndexOf("Project Identity Gate", [System.StringComparison]::Ordinal) -gt $skill.IndexOf("Maintenance Lanes", [System.StringComparison]::Ordinal)) {
+    throw "Project Identity Gate must precede maintenance-lane selection in the optimizer."
+}
+Add-Check -Name "project-identity-contract" -Detail "read-only discovery, confidence, brainstorming, identity lock, correction, and delegation fences present"
+
+if (-not (Test-Path -LiteralPath $identityCasesPath -PathType Leaf)) {
+    throw "Project identity regression cases missing: $identityCasesPath"
+}
+$identityCases = Get-Content -LiteralPath $identityCasesPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($identityCases.schema -ne "project-identity-gate-cases-v1" -or @($identityCases.cases).Count -ne 3) {
+    throw "Project identity regression case schema or count is invalid."
+}
+foreach ($case in @($identityCases.cases)) {
+    if ($case.expected_action -ne "ask-before-write" -or $case.expected_confidence -eq "high") {
+        throw "Identity case does not fail closed before writes: $($case.id)"
+    }
+    if (@($case.required_questions).Count -ne 3) {
+        throw "Identity case must cover purpose, architecture, and final outcome: $($case.id)"
+    }
+    foreach ($prohibited in @("infer-project-purpose", "write-roadmap")) {
+        if ($prohibited -notin @($case.prohibited_actions)) {
+            throw "Identity case lacks prohibited action '$prohibited': $($case.id)"
+        }
+    }
+}
+Add-Check -Name "project-identity-regressions" -Detail "document vault, template library, and asset collection cases fail closed before writes"
 
 $workflowReference = Get-Content -LiteralPath (Join-Path $skillRoot "references\workflow-state-and-evidence.md") -Raw -Encoding UTF8
 foreach ($required in @(
@@ -66,6 +130,7 @@ foreach ($required in @(
     "Runtime Hotfix",
     "Source Release",
     "Audit Only",
+    "Project Identity Gate",
     "hooks.json",
     "audit-context-budget.ps1",
     "new-agent-run.ps1",
@@ -98,7 +163,7 @@ foreach ($required in @(
         throw "Optimizer is missing required route or output term: $required"
     }
 }
-Add-Check -Name "routing-contract" -Detail "lane, hook, context, agent, state, verification, learning, evolution, web, and output routes present"
+Add-Check -Name "routing-contract" -Detail "identity, lane, hook, context, agent, state, verification, learning, evolution, web, and output routes present"
 
 foreach ($prohibited in @("鍙戠", "涓嶆", "鎻愪", "婧愮", [char]0xfffd)) {
     if ($skill.Contains([string]$prohibited)) {

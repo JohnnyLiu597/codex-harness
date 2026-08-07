@@ -76,11 +76,14 @@ contracts, security, data, migrations, deployment, browser flows, or releases.
 
 ## Onboarding Sequence
 
-1. Audit the repository and existing dirty worktree.
-2. Read real build, test, runtime, and deployment commands.
-3. Create only missing scaffold files.
-4. Populate architecture, commands, testing, smoke, and context budgets from
+1. Run the Project Identity Gate from `project-identity-gate.md`. Keep discovery
+   read-only until purpose, authoritative target, architecture boundaries, final
+   outcome, and allowed change scope are locked.
+2. Audit the repository and existing dirty worktree.
+3. Read real build, test, runtime, and deployment commands.
+4. Create only missing scaffold files after the identity lock.
+5. Populate architecture, commands, testing, smoke, and context budgets from
    repository evidence.
-5. Detect the test surface.
-6. Run project harness verification.
-7. Record remaining warnings instead of inventing commands or dependencies.
+6. Detect the test surface.
+7. Run project harness verification.
+8. Record remaining warnings instead of inventing commands or dependencies.

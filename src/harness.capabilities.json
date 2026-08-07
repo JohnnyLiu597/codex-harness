@@ -56,6 +56,7 @@
       "maker-checker-reviews",
       "component-registry",
       "bounded-ablation",
+      "project-identity-gate",
       "web-source-resolution",
       "article-source-resolution"
     ]
@@ -72,6 +73,7 @@
     "job-state": "Durable adapter records for native Goal, subagent, worktree, scheduled, event-driven, and manual work.",
     "verification-envelope": "Tamper-evident command evidence with finite timeouts, required path classes, before/after input hashes, stale detection, and declared-versus-observed separation.",
     "component-evolution": "Registry, review cadence, compensation hypotheses, bounded ablation, and retirement criteria for harness components.",
+    "project-identity-gate": "Read-only workspace classification and compact brainstorming before ambiguous project-level writes, scaffolds, roadmaps, or delegation.",
     "codex-workflow-core": "Codex-only workflow-control pack: hook router, agent pack, workflow entry, and self-tests.",
     "hook-router": "Metadata-only local hook event router with privacy-preserving Stop hook records.",
     "scheduled-maintenance": "Weekly Codex cron automation that runs health checks, bounded cross-project learning, current concept research, and review-proposal generation without unattended source edits.",
@@ -152,6 +154,15 @@
       "scripts\\audit-harness-components.ps1",
       "scripts\\new-ablation-run.ps1",
       "docs\\component-evolution.md"
+    ],
+    "project_identity_gate": [
+      "AGENTS.md",
+      "skills\\project-harness-optimizer\\SKILL.md",
+      "skills\\project-harness-optimizer\\references\\project-identity-gate.md",
+      "harness-evals\\cases\\project-identity-gate\\README.md",
+      "harness-evals\\cases\\project-identity-gate\\cases.json",
+      "harness-evals\\test-project-harness-optimizer.ps1",
+      "harness-evals\\trace-evals\\prompts.csv"
     ],
     "web_source_resolution": [
       "AGENTS.md",

@@ -655,7 +655,20 @@ try {
     $customStatePath = Join-Path $customHome ('hook-logs\state\' + (Get-TestSessionKey -SessionId $customSession) + '.json')
     $fallbackStatePath = Join-Path $fallbackProfile ('.codex\hook-logs\state\' + (Get-TestSessionKey -SessionId $customSession) + '.json')
     if (-not (Test-Path -LiteralPath $customStatePath -PathType Leaf) -or (Test-Path -LiteralPath $fallbackStatePath -PathType Leaf)) {
-        throw 'codex-hook.ps1 did not propagate CODEX_HOME to the router.'
+        $observedStatePaths = @(Get-ChildItem -LiteralPath (Join-Path $customHome 'hook-logs\state') -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+        $latestCustomLog = Get-ChildItem -LiteralPath (Join-Path $customHome 'hook-logs') -Filter 'hook-posttooluse-*.jsonl' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        $payloadParseStatus = ''
+        $observedPayloadLength = 0
+        $observedPayloadHash = ''
+        if ($latestCustomLog) {
+            try {
+                $latestCustomEntry = Get-Content -LiteralPath $latestCustomLog.FullName -Tail 1 | ConvertFrom-Json
+                $payloadParseStatus = [string]$latestCustomEntry.payload.parse_status
+                $observedPayloadLength = [int]$latestCustomEntry.payload.length
+                $observedPayloadHash = [string]$latestCustomEntry.payload.sha256
+            } catch { }
+        }
+        throw "codex-hook.ps1 did not propagate CODEX_HOME to the router. expected=$customStatePath observed=$($observedStatePaths -join ',') payload_parse=$payloadParseStatus expected_payload_length=$($customPayload.Length) observed_payload_length=$observedPayloadLength expected_payload_hash=$(Get-TestSha256Text -Text $customPayload) observed_payload_hash=$observedPayloadHash"
     }
 
     $failureHome = Join-Path $tmpRoot 'router-failure-home'

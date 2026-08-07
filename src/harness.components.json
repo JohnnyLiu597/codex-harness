@@ -108,7 +108,8 @@
       ],
       "evidence": [
         "scripts/audit-skill-surface.ps1",
-        "scripts/audit-context-budget.ps1"
+        "scripts/audit-context-budget.ps1",
+        "skills/project-harness-optimizer/references/project-identity-gate.md"
       ],
       "cost": {
         "level": "medium",
@@ -148,6 +149,8 @@
       "evidence": [
         "harness-evals/run-harness-evals.ps1",
         "harness-evals/run-trace-evals.ps1",
+        "harness-evals/cases/project-identity-gate/cases.json",
+        "harness-evals/test-project-harness-optimizer.ps1",
         "harness-evals/test-trace-evals-v3.ps1",
         "harness-evals/test-verification-gate.ps1",
         "harness-evals/test-verification-envelope.ps1"

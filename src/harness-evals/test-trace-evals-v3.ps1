@@ -147,6 +147,16 @@ public static class FakeCodex
         Console.WriteLine("{\"type\":\"item.started\",\"item\":{\"id\":\"item-1\",\"type\":\"command_execution\",\"command\":\"synthetic\",\"status\":\"in_progress\"}}");
         Console.WriteLine("{\"type\":\"item.completed\",\"item\":{\"id\":\"item-1\",\"type\":\"command_execution\",\"command\":\"synthetic\",\"status\":\"completed\",\"exit_code\":0}}");
 
+        if (prompt.Contains("MODE_CLEANUP_NOISE"))
+        {
+            Console.WriteLine("SUCCESS: The process with PID 1234 (child process of PID 5678) has been terminated.");
+            Console.WriteLine("\u6210\u529f: \u5df2\u7ec8\u6b62 PID 4321 (\u7236\u8fdb\u7a0b PID 8765) \u7684\u5b50\u8fdb\u7a0b\u3002");
+        }
+        if (prompt.Contains("MODE_INVALID_JSONL"))
+        {
+            Console.WriteLine("\ufffdALERT: process PID 1234 (parent PID 5678) is still running.");
+        }
+
         if (prompt.Contains("MODE_SELF_CONTAMINATION"))
         {
             Console.WriteLine("{\"type\":\"item.completed\",\"item\":{\"id\":\"item-2\",\"type\":\"reasoning\",\"text\":\"self-contamination-marker\"}}");
@@ -187,7 +197,7 @@ public static class FakeCodex
         $privatePromptMarker = "private-prompt-$($surface.Name)-9d81"
         $privateExpectedMarker = "private-expected-$($surface.Name)-6a42"
         Write-PromptCase -Path $successPrompt -Id "success-$($surface.Name)" `
-            -Prompt "MODE_SUCCESS $privatePromptMarker" -Expected $privateExpectedMarker `
+            -Prompt "MODE_SUCCESS MODE_CLEANUP_NOISE $privatePromptMarker" -Expected $privateExpectedMarker `
             -MustInclude "final-safe-answer" `
             -MustIncludeEvents "thread.started|item.started|item.completed|turn.completed" `
             -MustIncludeTools "command_execution"
@@ -208,6 +218,7 @@ public static class FakeCodex
         Assert-True ($successCase.failure_class -eq "none") "$($surface.Name) success case has a failure class"
         Assert-True ($successCase.attempt_count -eq 1 -and @($successCase.attempts).Count -eq 1) "$($surface.Name) success attempt metadata is wrong"
         Assert-True ($successCase.timeout_seconds -eq 5 -and $successCase.max_attempts -eq 1) "$($surface.Name) per-case controls were not recorded"
+        Assert-True ($successCase.trace_summary.ignored_process_cleanup_line_count -eq 2) "$($surface.Name) did not classify exact English and localized Windows cleanup noise"
         Assert-True ((Get-Content -LiteralPath $successCase.final -Raw).Trim() -eq "final-safe-answer") "$($surface.Name) final artifact is not the parsed assistant message"
 
         $successGradesText = Get-Content -LiteralPath $success.manifests.grade -Raw
@@ -218,7 +229,16 @@ public static class FakeCodex
         Assert-True ($successGrades.grader.keyword_grading.scope -eq "final-assistant-message") "$($surface.Name) keyword grading scope is not final assistant only"
         Assert-True ($successGradesText -notmatch [regex]::Escape($privatePromptMarker)) "$($surface.Name) grade manifest persisted raw prompt text"
         Assert-True ($successGradesText -notmatch [regex]::Escape($privateExpectedMarker)) "$($surface.Name) grade manifest persisted raw expected text"
+        Assert-True (@($successGrades.grades)[0].trace_parse.ignored_process_cleanup_line_count -eq 2) "$($surface.Name) grader did not preserve cleanup-noise evidence"
         $checks.Add("$($surface.Name): final assistant and explicit event/tool invariants") | Out-Null
+
+        $invalidJsonPrompt = Join-Path $promptRoot "invalid-jsonl.csv"
+        Write-PromptCase -Path $invalidJsonPrompt -Id "invalid-jsonl-$($surface.Name)" -Prompt "MODE_INVALID_JSONL" -Expected "Arbitrary non-JSON output fails."
+        $invalidJson = Invoke-TraceRunner -Surface $surface -PromptFile $invalidJsonPrompt -RunsRoot $runsRoot -CodexCommand $fakeCodexPath -NoGrade
+        Assert-True ($invalidJson.status -eq "failed" -and $invalidJson.run_status -eq "failed") "$($surface.Name) accepted arbitrary non-JSON trace output"
+        $invalidJsonManifest = Get-Content -LiteralPath $invalidJson.manifests.result -Raw | ConvertFrom-Json
+        Assert-True (@($invalidJsonManifest.results)[0].failure_class -eq "invalid-jsonl") "$($surface.Name) did not classify arbitrary non-JSON trace output"
+        $checks.Add("$($surface.Name): exact cleanup noise allowed, arbitrary non-JSON rejected") | Out-Null
 
         $contaminationPrompt = Join-Path $promptRoot "self-contamination.csv"
         Write-PromptCase -Path $contaminationPrompt -Id "self-contamination-$($surface.Name)" `

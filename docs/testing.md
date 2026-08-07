@@ -73,7 +73,16 @@ These checks cover causally paired hook verification, session-bound weekly
 restrictions, the exact read-tool allowlist, external write-tool denial,
 registered-only and oversized-input cleanup, verification gate process exits,
 verification envelope required evidence and stale-input detection, trace eval
-grading/timeout/cleanup, workflow-core invariants, and optimizer routing.
+grading/timeout/cleanup, workflow-core invariants, optimizer routing, and the
+project identity gate's read-only lock before ambiguous work begins.
+
+`test-project-harness-optimizer.ps1` validates the identity protocol and three
+misclassification regressions: a salient note inside a document vault, workflow
+exports inside a template library, and an archive inside a skill or asset
+collection. The matching live trace cases require the final response to expose
+the uncertainty, ask for target and scope confirmation, and avoid tool use or
+write-shaped language. Trace ingestion ignores only narrowly recognized Windows
+process-cleanup lines; arbitrary non-JSON output still fails the run.
 
 The workflow-core check also rejects hook fields that the current Codex CLI
 does not support for that lifecycle event. Static JSON validity is not enough.

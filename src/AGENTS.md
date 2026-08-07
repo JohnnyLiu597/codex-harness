@@ -16,8 +16,34 @@ order:
 5. `MEMORY.md`
 6. `README.md`
 
-If none exist, state that no project context files were found and proceed from
-the user prompt.
+If none exist, state that no project context files were found. If the workspace
+identity is ambiguous, apply the Project Identity Gate below before proceeding.
+
+## Project Identity Gate
+
+- Before treating a directory as one product or writing project-level anchors,
+  establish its identity when purpose, authoritative target, or boundaries are
+  unclear. Common triggers are missing trustworthy root context, mixed content,
+  non-repository folders, collections, archives, template libraries, document
+  vaults, or several plausible project targets.
+- Start with a bounded read-only inventory. Rank evidence as: the user's current
+  statement; pre-existing root docs or manifests; consistent repository,
+  package, build, and deployment metadata; then names and file contents as
+  inference only. Files generated during the current task cannot confirm the
+  premise that caused their generation.
+- Classify the workspace and state confidence. At high confidence, summarize
+  the identity in one sentence and continue. At medium or low confidence, show
+  `Observed`, `Inferred`, and `Unknown`, then ask one compact brainstorming
+  round of at most three questions covering: directory role and authoritative
+  target; intended users or workflow and architecture boundaries; final
+  outcome, success criteria, and allowed change scope.
+- Lock the purpose, scope, current or intended architecture, non-goals, and
+  final outcome from the user's answer. Until that identity lock exists, do not
+  write files, extract or reorganize assets, create scaffolds or roadmaps,
+  launch implementation subagents, or create durable task records. A generic
+  request to proceed does not waive this gate while identity remains unclear.
+- If the user corrects the premise, treat generated or conflicting anchors as
+  stale, reconcile them before further work, and report the corrected scope.
 
 ## Global Behavior
 
@@ -168,8 +194,9 @@ If these files are missing:
 
 - For quick one-off questions, do not create files automatically; mention the
   gap only if it matters.
-- For substantial implementation, repo onboarding, or multi-step debugging,
-  create a minimal scaffold before the work when it is safe to write files.
+- After the Project Identity Gate passes, for substantial implementation, repo
+  onboarding, or multi-step debugging, create a minimal scaffold before the
+  work when it is safe to write files.
 - For major changes, migrations, architecture changes, security-sensitive work,
   release work, or work likely to span sessions, create or update the scaffold
   and write an `artifacts/plan_*.md` execution plan.
@@ -258,6 +285,9 @@ the standard scaffold.
   dependency coupling outweighs the benefit.
   Keep immediate blockers and final integration in the parent task; do not
   delegate tiny, tightly coupled, or coordination-heavy work.
+- Before a project identity lock, use at most one read-only explorer when it is
+  genuinely needed; do not fan out or delegate writes, scaffolding, extraction,
+  architecture, or roadmap creation.
 - Choose the smallest topology in `harness-orchestrator`: serial pipeline,
   fan-out/fan-in, supervisor-workers, or a bounded evaluator-optimizer loop.
 - Keep custom agents as standalone `agents/*.toml` definitions with `name`,

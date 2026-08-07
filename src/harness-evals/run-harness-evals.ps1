@@ -207,7 +207,7 @@ Invoke-Eval -Name "optimizer-workflow-routing" -Script {
     $raw = & (Join-Path $codexHomePath "harness-evals\test-project-harness-optimizer.ps1") -CodexHome $codexHomePath
     $result = $raw | ConvertFrom-Json
     if ($result.status -ne "success") { throw "project-harness-optimizer self-test failed" }
-    "project-harness-optimizer routes lanes, lifecycle, context, agents, state, verification, learning, evolution, web intake, and release closure"
+    "project-harness-optimizer gates ambiguous project identity before writes and routes lanes, lifecycle, context, agents, state, verification, learning, evolution, web intake, and release closure"
 }
 
 Invoke-Eval -Name "weekly-harness-learning" -Script {

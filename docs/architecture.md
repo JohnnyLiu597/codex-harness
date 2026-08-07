@@ -70,6 +70,28 @@ Verification envelopes, job-state adapters, learning intake, component
 registries, and ablation records are this harness's reviewable extensions built
 on top of those surfaces.
 
+## Project Identity Preflight
+
+Project identity is resolved before maintenance lanes, scaffolding, or
+delegation are selected. The preflight uses the current user statement first,
+then pre-existing root context and technical metadata. Folder names and salient
+content are supporting inference only; files generated during the current run
+cannot validate the premise that caused them to be generated.
+
+When evidence is consistent, Codex states the identity in one sentence and
+continues. When evidence is missing or conflicting, it reports observed,
+inferred, and unknown facts, then asks no more than three questions covering
+purpose, authoritative target and architecture boundaries, users and workflow,
+final outcome and success criteria, and allowed scope. The workspace remains
+read-only until those answers form an explicit identity lock. A generic request
+to continue does not waive unresolved ambiguity.
+
+Before the identity lock, Codex may use at most one bounded read-only explorer
+when it can answer a concrete uncertainty. It does not write files, create a
+scaffold or roadmap, dispatch implementation workers, or create durable project
+records. This prevents a plausible document or export from silently becoming a
+fictional product definition.
+
 ## Hook And Sub-Agent Guardrails
 
 Hooks are intentionally narrow. They record lifecycle metadata, reject only

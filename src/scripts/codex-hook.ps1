@@ -8,7 +8,11 @@ $ErrorActionPreference = "SilentlyContinue"
 
 $payload = ""
 try {
+    [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
     $payload = [Console]::In.ReadToEnd()
+    if ($payload.Length -gt 0 -and [int][char]$payload[0] -eq 0xfeff) {
+        $payload = $payload.Substring(1)
+    }
 } catch {
     $payload = ""
 }

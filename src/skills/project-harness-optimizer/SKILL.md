@@ -1,6 +1,6 @@
 ---
 name: project-harness-optimizer
-description: Explain, audit, repair, and upgrade the user's Codex-only harness. Use for runtime/source drift, GitHub-ready releases, hooks, subagents, worktrees, workflow commands, context budgets, resumable job state, verification envelopes and gates, test-loop closure, trace/tool evals, learning intake, component evolution, project onboarding, public URL intake, and converting real Codex failures into durable docs, scripts, skills, reviews, or evals.
+description: Explain, audit, repair, and upgrade the user's Codex-only harness. Use for ambiguous project identity and pre-work brainstorming, runtime/source drift, GitHub-ready releases, hooks, subagents, worktrees, workflow commands, context budgets, resumable job state, verification envelopes and gates, test-loop closure, trace/tool evals, learning intake, component evolution, project onboarding, public URL intake, and converting real Codex failures into durable docs, scripts, skills, reviews, or evals.
 ---
 
 # Project Harness Optimizer
@@ -14,13 +14,19 @@ recovery around native Codex capabilities.
 1. Read the nearest project anchors in this order when present:
    `AGENTS.md`, `mission.md`, `CONTEXT.md`, `.agent/rules.md`, `MEMORY.md`,
    `README.md`, then relevant `docs/` files.
-2. Inspect `git status`, source/runtime drift, and the nearest verification
+2. Run the Project Identity Gate when purpose, target, or boundaries are
+   ambiguous. Stay read-only until the user locks the project brief.
+3. Inspect `git status`, source/runtime drift, and the nearest verification
    scripts before changing files.
-3. Choose exactly one maintenance lane.
-4. Classify the request into one or more harness planes.
-5. Patch the smallest durable surface and run the nearest check.
-6. Sync in the lane's direction, then run the release/runtime gate justified by
+4. Choose exactly one maintenance lane.
+5. Classify the request into one or more harness planes.
+6. Patch the smallest durable surface and run the nearest check.
+7. Sync in the lane's direction, then run the release/runtime gate justified by
    the changed surface.
+
+Read [project-identity-gate.md](references/project-identity-gate.md) before
+onboarding or planning an ambiguous directory. This gate is a preflight, not a
+fourth maintenance lane.
 
 Read [maintenance-and-safety.md](references/maintenance-and-safety.md) for the
 full lane, exclusion, backup, and publish-boundary contract.
@@ -82,6 +88,7 @@ evolution.
 | Repeated failure | learning intake, then trace/tool eval | regression case and destination |
 | Improve from recent tasks | bounded weekly learning | sanitized findings, hashes, research citations, and proposals |
 | Too many harness parts | component audit before adding more | compensation hypothesis or retirement candidate |
+| Ambiguous project or folder | Project Identity Gate and compact brainstorming | confirmed identity lock; no writes before confirmation |
 | Onboard a repository | project scaffold audit/init | generated files plus project verification |
 | Analyze an external page | `web-source-resolver` first | acquisition evidence and cited findings |
 | Prepare GitHub release | Source Release lane | Full staging gate, sanitized manifest, forbidden-file scan, clean diff |
@@ -131,6 +138,8 @@ evolution.
 - Delegate bounded side work that can run independently. Keep the critical path
   in the parent task.
 - Prefer read-only researcher, explorer, reviewer, auditor, and tester roles.
+- Before project identity is locked, allow at most one read-only explorer and no
+  implementation fan-out, extraction, scaffolding, architecture, or roadmap writes.
 - Give write workers explicit ownership and isolation. Use a branch or worktree
   when parallel edits could collide.
 - Keep reusable agent files free of model and reasoning pins. Let Codex choose
@@ -229,9 +238,10 @@ enter durable state.
 
 ## Project Scaffold
 
-For substantial implementation, onboarding, cross-session work, or repeated
-debugging, audit the project harness first. Create the minimal scaffold when it
-is safe and missing. For major changes, migrations, security-sensitive work,
+After the Project Identity Gate passes, for substantial implementation,
+onboarding, cross-session work, or repeated debugging, audit the project
+harness first. Create the minimal scaffold when it is safe and missing. For
+major changes, migrations, security-sensitive work,
 release work, or tasks likely to cross sessions, create a durable plan before
 editing business code.
 

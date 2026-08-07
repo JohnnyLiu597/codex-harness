@@ -27,6 +27,9 @@ published without leaking local state.
 - Evidence-graded article completeness and citation resolution as a specialized
   downstream route.
 - Codex sub-agent profiles and workflow-control scripts.
+- A project identity gate that keeps ambiguous workspaces read-only until the
+  user and Codex agree on purpose, architecture boundaries, and the intended
+  outcome.
 
 ## Out Of Scope
 
@@ -52,6 +55,12 @@ published without leaking local state.
 
 ## Recent Changes
 
+- 2026-08-07: Added a project identity gate for ambiguous folders and prompts.
+  Codex now separates observed evidence from inference, asks at most three
+  focused questions, and keeps scaffolding, implementation, and sub-agent
+  fan-out blocked until purpose, architecture boundaries, success criteria,
+  and allowed scope are clear. Deterministic fixtures and live trace evals
+  cover document vaults, template libraries, and mixed collections.
 - 2026-08-05: Aligned default hook trust with the Codex Desktop review surface.
   `SessionEnd` remains supported by the router but is omitted from the default
   definition while the active Desktop hook browser cannot display it for

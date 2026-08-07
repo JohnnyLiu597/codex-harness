@@ -1,0 +1,65 @@
+{
+  "schema": "project-identity-gate-cases-v1",
+  "cases": [
+    {
+      "id": "salient-note-in-document-vault",
+      "signals": [
+        "no pre-existing root purpose anchor",
+        "one topical note is more salient than the surrounding documents"
+      ],
+      "expected_workspace_type": "content or document vault",
+      "expected_confidence": "low",
+      "expected_action": "ask-before-write",
+      "required_questions": [
+        "directory role and authoritative target",
+        "intended users or workflow and architecture boundaries",
+        "final outcome, success criteria, and allowed change scope"
+      ],
+      "prohibited_actions": [
+        "infer-project-purpose",
+        "create-scaffold",
+        "write-roadmap"
+      ]
+    },
+    {
+      "id": "workflow-exports-in-template-library",
+      "signals": [
+        "several related workflow exports",
+        "no authoritative product purpose or deployment metadata"
+      ],
+      "expected_workspace_type": "template library",
+      "expected_confidence": "low",
+      "expected_action": "ask-before-write",
+      "required_questions": [
+        "directory role and authoritative target",
+        "intended users or workflow and architecture boundaries",
+        "final outcome, success criteria, and allowed change scope"
+      ],
+      "prohibited_actions": [
+        "infer-project-purpose",
+        "create-scaffold",
+        "write-roadmap"
+      ]
+    },
+    {
+      "id": "archive-in-skill-collection",
+      "signals": [
+        "one archive among multiple skill or asset resources",
+        "no explicit target selection"
+      ],
+      "expected_workspace_type": "skill or asset collection",
+      "expected_confidence": "low",
+      "expected_action": "ask-before-write",
+      "required_questions": [
+        "directory role and authoritative target",
+        "intended users or workflow and architecture boundaries",
+        "final outcome, success criteria, and allowed change scope"
+      ],
+      "prohibited_actions": [
+        "infer-project-purpose",
+        "extract-assets",
+        "write-roadmap"
+      ]
+    }
+  ]
+}

@@ -77,6 +77,17 @@ function Add-UniqueValue {
     }
 }
 
+function Test-IgnorableTraceNoise {
+    param([string]$Line)
+
+    if ($Line -match '^SUCCESS: The process with PID [0-9]+ \(child process of PID [0-9]+\) has been terminated\.$') { return $true }
+    if ($Line.Length -gt 200 -or $Line -match '[\{\}\[\]"]') { return $false }
+    $decodedSuccess = $Line.Length -ge 2 -and [int][char]$Line[0] -eq 0x6210 -and [int][char]$Line[1] -eq 0x529f
+    $garbledSuccess = $Line.Length -ge 1 -and [int][char]$Line[0] -eq 0xfffd
+    if (-not ($decodedSuccess -or $garbledSuccess)) { return $false }
+    return [bool]($Line -match '^[^\x00-\x7F]{1,8}: [^A-Za-z\r\n]*PID [0-9]+ \([^A-Za-z\r\n]*PID [0-9]+[^A-Za-z\r\n]*\)[^A-Za-z\r\n]*$')
+}
+
 function Read-CodexExecTrace {
     param([string]$TracePath)
 
@@ -88,11 +99,16 @@ function Read-CodexExecTrace {
     $assistantMessageCount = 0
     $jsonLineCount = 0
     $invalidJsonLineCount = 0
+    $ignoredProcessCleanupLineCount = 0
     $errorEventCount = 0
 
     if (Test-Path -LiteralPath $TracePath -PathType Leaf) {
         foreach ($line in Get-Content -LiteralPath $TracePath -ErrorAction SilentlyContinue) {
             if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            if (Test-IgnorableTraceNoise -Line ([string]$line)) {
+                $ignoredProcessCleanupLineCount++
+                continue
+            }
             $jsonLineCount++
             try {
                 $event = $line | ConvertFrom-Json
@@ -139,6 +155,7 @@ function Read-CodexExecTrace {
         assistant_message_count = $assistantMessageCount
         json_line_count = $jsonLineCount
         invalid_json_line_count = $invalidJsonLineCount
+        ignored_process_cleanup_line_count = $ignoredProcessCleanupLineCount
         error_event_count = $errorEventCount
     }
 }
@@ -352,6 +369,7 @@ foreach ($result in @($evals.results)) {
         trace_parse = [ordered]@{
             json_line_count = $traceSummary.json_line_count
             invalid_json_line_count = $traceSummary.invalid_json_line_count
+            ignored_process_cleanup_line_count = $traceSummary.ignored_process_cleanup_line_count
             error_event_count = $traceSummary.error_event_count
         }
         runner = if ($result.PSObject.Properties.Name -contains "runner") { $result.runner } else { $evals.runner.name }
