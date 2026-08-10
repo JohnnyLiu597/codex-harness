@@ -506,6 +506,37 @@ function Test-WeeklyCompleteCommand {
     return Test-Path -LiteralPath $inputPath -PathType Leaf
 }
 
+function Test-WeeklyWriteInputCommand {
+    param(
+        [string]$Command,
+        [string]$RunId,
+        [string]$CodexHomePath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Command) -or [string]::IsNullOrWhiteSpace($RunId)) {
+        return $false
+    }
+    $scriptPath = [regex]::Escape((Join-Path $CodexHomePath 'scripts\invoke-weekly-harness-learning.ps1'))
+    $run = [regex]::Escape($RunId)
+    $pattern = '^\s*powershell(?:\.exe)?\s+-NoProfile\s+-ExecutionPolicy\s+Bypass\s+-File\s+["'']?' +
+        $scriptPath + '["'']?\s+-Mode\s+WriteInput\s+-RunId\s+["'']?' + $run +
+        '["'']?\s+-ChunkIndex\s+(?<index>\d{1,2})\s+-InputChunkBase64\s+["'']?(?<payload>[A-Za-z0-9+/]+={0,2})["'']?' +
+        '(?<final>\s+-FinalChunk)?\s*$'
+    $match = [regex]::Match($Command, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if (-not $match.Success) { return $false }
+    $index = 0
+    if (-not [int]::TryParse($match.Groups['index'].Value, [ref]$index) -or $index -lt 0 -or $index -gt 63) {
+        return $false
+    }
+    if ($match.Groups['payload'].Value.Length -gt 10924) { return $false }
+    try {
+        $bytes = [Convert]::FromBase64String($match.Groups['payload'].Value)
+        return $bytes.Length -le 8192
+    } catch {
+        return $false
+    }
+}
+
 function Test-WeeklyReadOnlyTool {
     param([string]$ToolName)
 
@@ -552,8 +583,9 @@ function Get-WeeklyGuardDenyReason {
 
     if ($null -eq $Guard -or -not [bool]$Guard.active) { return "" }
     if ($ToolName -eq 'Bash') {
+        if (Test-WeeklyWriteInputCommand -Command $ToolCommand -RunId $Guard.run_id -CodexHomePath $CodexHomePath) { return "" }
         if (Test-WeeklyCompleteCommand -Command $ToolCommand -RunId $Guard.run_id -CodexHomePath $CodexHomePath -ExpectedInputPath $Guard.input_path) { return "" }
-        return 'Weekly harness learning is in restricted mode. Shell execution is limited to the exact completion command.'
+        return 'Weekly harness learning is in restricted mode. Shell execution is limited to exact WriteInput chunk commands and the exact completion command.'
     }
     if ($ToolName -eq 'apply_patch') {
         $inputPath = Get-WeeklyInputPatchPath -PatchText $ToolCommand -RunId $Guard.run_id

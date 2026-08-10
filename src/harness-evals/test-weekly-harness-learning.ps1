@@ -86,10 +86,33 @@ function Register-InputPath {
 
 function Write-InputFixture {
     param([string]$RunId)
-    $path = Join-Path ([System.IO.Path]::GetFullPath($env:TEMP)) ("codex-weekly-input-$RunId-test.json")
-    $inputFixture | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $path -Encoding UTF8
-    Register-InputPath -RunId $RunId -Path $path
-    return $path
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes(($inputFixture | ConvertTo-Json -Depth 10))
+    $offset = 0
+    $chunkIndex = 0
+    $result = $null
+    while ($offset -lt $bytes.Length) {
+        $count = [math]::Min(257, $bytes.Length - $offset)
+        $chunk = New-Object byte[] $count
+        [Array]::Copy($bytes, $offset, $chunk, 0, $count)
+        $parameters = @{
+            Mode = 'WriteInput'
+            CodexHome = $tmpRoot
+            RunId = $RunId
+            ChunkIndex = $chunkIndex
+            InputChunkBase64 = [Convert]::ToBase64String($chunk)
+        }
+        if (($offset + $count) -eq $bytes.Length) { $parameters.FinalChunk = $true }
+        $result = (& (Join-Path $tmpRoot 'scripts\invoke-weekly-harness-learning.ps1') @parameters) | ConvertFrom-Json
+        if ($result.status -ne 'success' -or [int]$result.accepted_chunk_index -ne $chunkIndex) {
+            throw "WriteInput did not accept chunk $chunkIndex."
+        }
+        $offset += $count
+        $chunkIndex += 1
+    }
+    if (-not [bool]$result.final -or [string]::IsNullOrWhiteSpace([string]$result.input_path)) {
+        throw 'WriteInput did not finalize and register the sanitized input.'
+    }
+    return [string]$result.input_path
 }
 
 $startRaw = & (Join-Path $tmpRoot 'scripts\invoke-weekly-harness-learning.ps1') -Mode Start -CodexHome $tmpRoot -SkipHealth
@@ -100,6 +123,9 @@ if ($start.status -ne 'success' -or [string]::IsNullOrWhiteSpace($start.run_id))
 if ([string]::IsNullOrWhiteSpace($start.temporary_input_prefix) -or
     -not ([string]$start.temporary_input_prefix).StartsWith([System.IO.Path]::GetFullPath($env:TEMP), [System.StringComparison]::OrdinalIgnoreCase)) {
     throw 'Weekly learning Start did not return a canonical TEMP input prefix.'
+}
+if ([int]$start.input_chunk_max_bytes -ne 8192 -or [int]$start.input_chunk_max_count -ne 64) {
+    throw 'Weekly learning Start did not advertise the bounded WriteInput contract.'
 }
 
 $inputPath = Write-InputFixture -RunId $start.run_id

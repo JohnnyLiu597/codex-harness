@@ -178,7 +178,7 @@ if (Test-Path -LiteralPath $automationTemplatePath) {
         "Your first operation must be",
         "invoke-weekly-harness-learning.ps1",
         "temporary_input_prefix",
-        "Do not run ordinary shell commands",
+        "Do not run any other shell command before the final exact Complete command",
         "list_threads",
         "read_thread",
         "includeOutputs=false",

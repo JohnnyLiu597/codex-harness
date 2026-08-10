@@ -33,9 +33,12 @@ After Start, the hook router binds restricted mode to the starting Codex
 session, so changing to a child or outside working directory does not escape
 the guard. PreToolUse inspects every tool and uses an exact allowlist for the
 native thread readers plus approved documentation and web-retrieval tools. It
-permits `apply_patch` for one registered sanitized JSON target under the
-returned TEMP prefix and allows only the exact final Complete command. Unknown
-or compound read-like tool names, shell execution, additional TEMP targets,
+permits only exact `WriteInput` commands carrying sequential Base64 chunks of
+at most 8 KiB decoded each, followed by the exact final Complete command. The
+state-machine script generates the TEMP path, enforces a 64-chunk and 256 KiB
+total limit, validates UTF-8 and the input schema, atomically finalizes the
+file, and registers the path in the active run. Unknown or compound read-like
+tool names, arbitrary shell execution, additional TEMP targets,
 maintainable-file edits, and external write tools are denied.
 
 The scheduled task leaves model and reasoning selection adaptive. The public
@@ -107,10 +110,14 @@ The completion input is a temporary UTF-8 JSON file. It must use this shape:
 `source_ref` and `evidence_ref` are accepted only so the script can hash them.
 They are never written to durable state or reports.
 
-The script accepts input only from the active run's system TEMP prefix, requires
-the exact path registered by the restricted hook and exactly one owned JSON
-input, rejects files larger than 256 KiB, and deletes owned input on successful
-parsing or validation failure. Task
+Submit the serialized JSON through sequential `WriteInput` calls using the
+run ID, zero-based chunk indexes, standard Base64, and `-FinalChunk` on the
+last call. Start advertises the 8 KiB decoded chunk and 64-chunk limits.
+WriteInput accepts only the active run, writes only to the system TEMP path it
+generates, validates UTF-8 and the schema before finalization, and atomically
+registers the resulting path. Complete requires that exact path and exactly one
+owned JSON input, rejects totals larger than 256 KiB, and deletes owned input
+on successful parsing or validation failure. Task
 timestamps must fall inside the run's recorded lookback window. Only HTTPS
 citations on official OpenAI hosts or the official OpenAI GitHub organization
 are persisted; other URLs are rejected from durable state.

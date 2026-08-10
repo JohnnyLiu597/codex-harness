@@ -1,10 +1,14 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("Start", "Complete", "DryRun")]
+    [ValidateSet("Start", "WriteInput", "Complete", "DryRun")]
     [string]$Mode = "Start",
     [string]$CodexHome = "$env:USERPROFILE\.codex",
     [string]$RunId = "",
     [string]$InputPath = "",
+    [ValidateRange(0, 63)]
+    [int]$ChunkIndex = 0,
+    [string]$InputChunkBase64 = "",
+    [switch]$FinalChunk,
     [ValidateRange(1, 30)]
     [int]$LookbackDays = 7,
     [ValidateRange(1, 30)]
@@ -426,12 +430,134 @@ if ($Mode -eq 'Start') {
         run_directory = $runDir
         temporary_input_prefix = Join-Path ([System.IO.Path]::GetFullPath($env:TEMP)) ("codex-weekly-input-$RunId-")
         completion_script = Join-Path $codexHomePath 'scripts\invoke-weekly-harness-learning.ps1'
-        next_action = 'Collect only recent task summaries and current public research, write a sanitized v1 input file, then call Complete.'
+        input_chunk_max_bytes = 8192
+        input_chunk_max_count = 64
+        next_action = 'Collect only recent task summaries and current public research, submit the sanitized JSON through sequential WriteInput chunks, then call Complete with the returned input_path.'
     } | ConvertTo-Json -Depth 8 -Compress
     $releaseOwnedLock = $false
     $ownedRunId = ''
     $ownedRunDir = ''
     exit 0
+}
+
+if ($Mode -eq 'WriteInput') {
+    if ([string]::IsNullOrWhiteSpace($RunId)) { throw 'WriteInput requires -RunId from Start.' }
+    Assert-ValidRunId -Value $RunId
+    if ([string]::IsNullOrWhiteSpace($InputChunkBase64) -or $InputChunkBase64 -notmatch '^[A-Za-z0-9+/]+={0,2}$') {
+        throw 'WriteInput requires one standard Base64 input chunk.'
+    }
+    $runDir = Join-Path $runsRoot $RunId
+    $runPath = Join-Path $runDir 'run.json'
+    if (-not (Test-Path -LiteralPath $runPath -PathType Leaf) -or -not (Test-Path -LiteralPath $activeRunPath -PathType Leaf)) {
+        throw "Unknown or inactive weekly learning run: $RunId"
+    }
+    $activeRun = Get-Content -LiteralPath $activeRunPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ([string]$activeRun.run_id -ne $RunId) {
+        throw "Active weekly learning lock belongs to another run: $($activeRun.run_id)"
+    }
+    $ownedRunId = $RunId
+    $ownedRunDir = $runDir
+    $releaseOwnedLock = $true
+
+    $stagingPath = Join-Path ([System.IO.Path]::GetFullPath($env:TEMP)) ("codex-weekly-input-$RunId-staging.part")
+    $finalInputPath = Join-Path ([System.IO.Path]::GetFullPath($env:TEMP)) ("codex-weekly-input-$RunId-sanitized.json")
+    try {
+        $chunkBytes = [Convert]::FromBase64String($InputChunkBase64)
+        if ($chunkBytes.Length -gt 8192) { throw 'WriteInput chunk exceeds the 8 KiB decoded limit.' }
+        $expectedIndex = if ($activeRun.PSObject.Properties.Name -contains 'input_chunk_index') {
+            [int]$activeRun.input_chunk_index
+        } else {
+            0
+        }
+        if ($ChunkIndex -ne $expectedIndex) {
+            throw "WriteInput expected chunk index $expectedIndex but received $ChunkIndex."
+        }
+        if ($ChunkIndex -eq 0) {
+            foreach ($path in @($stagingPath, $finalInputPath)) {
+                if (Test-Path -LiteralPath $path -PathType Leaf) {
+                    throw 'WriteInput found an existing owned input for this run.'
+                }
+            }
+        } elseif (-not (Test-Path -LiteralPath $stagingPath -PathType Leaf)) {
+            throw 'WriteInput staging state is missing.'
+        }
+
+        $stream = [System.IO.File]::Open(
+            $stagingPath,
+            [System.IO.FileMode]::Append,
+            [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]::None
+        )
+        try {
+            $stream.Write($chunkBytes, 0, $chunkBytes.Length)
+            $stream.Flush($true)
+        } finally {
+            $stream.Dispose()
+        }
+        $totalBytes = (Get-Item -LiteralPath $stagingPath).Length
+        if ($totalBytes -gt 262144) { throw 'Weekly learning input exceeds the 256 KiB limit.' }
+
+        if ($activeRun.PSObject.Properties.Name -contains 'input_chunk_index') {
+            $activeRun.input_chunk_index = $ChunkIndex + 1
+        } else {
+            $activeRun | Add-Member -NotePropertyName input_chunk_index -NotePropertyValue ($ChunkIndex + 1)
+        }
+        if ($activeRun.PSObject.Properties.Name -contains 'input_bytes') {
+            $activeRun.input_bytes = $totalBytes
+        } else {
+            $activeRun | Add-Member -NotePropertyName input_bytes -NotePropertyValue $totalBytes
+        }
+
+        if ($FinalChunk) {
+            $strictUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
+            $inputText = $strictUtf8.GetString([System.IO.File]::ReadAllBytes($stagingPath))
+            $parsedInput = $inputText | ConvertFrom-Json
+            if ((Get-ObjectValue -Object $parsedInput -Name 'schema' -Default '') -ne 'codex-weekly-harness-learning-input-v1') {
+                throw 'Input schema must be codex-weekly-harness-learning-input-v1.'
+            }
+            [System.IO.File]::Move($stagingPath, $finalInputPath)
+            if ($activeRun.PSObject.Properties.Name -contains 'input_path') {
+                $activeRun.input_path = $finalInputPath
+            } else {
+                $activeRun | Add-Member -NotePropertyName input_path -NotePropertyValue $finalInputPath
+            }
+        }
+
+        $activeTemporary = Join-Path $stateRoot ('active-run.' + [guid]::NewGuid().ToString('N') + '.tmp')
+        try {
+            [System.IO.File]::WriteAllText(
+                $activeTemporary,
+                ($activeRun | ConvertTo-Json -Depth 6),
+                (New-Object System.Text.UTF8Encoding($false))
+            )
+            Move-Item -LiteralPath $activeTemporary -Destination $activeRunPath -Force
+        } finally {
+            if (Test-Path -LiteralPath $activeTemporary -PathType Leaf) {
+                Remove-Item -LiteralPath $activeTemporary -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        [ordered]@{
+            status = 'success'
+            run_id = $RunId
+            accepted_chunk_index = $ChunkIndex
+            next_chunk_index = $ChunkIndex + 1
+            final = [bool]$FinalChunk
+            input_path = if ($FinalChunk) { $finalInputPath } else { '' }
+            input_bytes = $totalBytes
+        } | ConvertTo-Json -Depth 4 -Compress
+        $releaseOwnedLock = $false
+        $ownedRunId = ''
+        $ownedRunDir = ''
+        exit 0
+    } catch {
+        foreach ($path in @($stagingPath, $finalInputPath)) {
+            if (Test-Path -LiteralPath $path -PathType Leaf) {
+                Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+            }
+        }
+        throw
+    }
 }
 
 $runRecord = $null

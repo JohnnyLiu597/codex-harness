@@ -285,6 +285,35 @@ try {
         throw 'Weekly restricted mode allowed arbitrary shell execution.'
     }
 
+    $writeInputPayloadBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('{}'))
+    $writeInputCommand = 'powershell -NoProfile -ExecutionPolicy Bypass -File "' +
+        (Join-Path $guardCodexHome 'scripts\invoke-weekly-harness-learning.ps1') +
+        '" -Mode WriteInput -RunId "' + $guardRunId + '" -ChunkIndex 0 -InputChunkBase64 "' +
+        $writeInputPayloadBase64 + '" -FinalChunk'
+    $writeInputPayload = [ordered]@{
+        session_id = $sessionId
+        cwd = $guardOutsideCwd
+        hook_event_name = 'PreToolUse'
+        tool_name = 'Bash'
+        tool_input = @{ command = $writeInputCommand }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $writeInputDecision = ((& $router -Event PreToolUse -Payload $writeInputPayload -CodexHome $guardCodexHome -LogRoot $tmpLogs -Quiet) -join '')
+    if (-not [string]::IsNullOrWhiteSpace($writeInputDecision)) {
+        throw 'Weekly restricted mode rejected an exact bounded WriteInput command.'
+    }
+
+    $compoundWriteInputPayload = [ordered]@{
+        session_id = $sessionId
+        cwd = $guardCwd
+        hook_event_name = 'PreToolUse'
+        tool_name = 'Bash'
+        tool_input = @{ command = $writeInputCommand + '; Write-Output blocked' }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $compoundWriteInputDecision = ((& $router -Event PreToolUse -Payload $compoundWriteInputPayload -CodexHome $guardCodexHome -LogRoot $tmpLogs -Quiet) -join '') | ConvertFrom-Json
+    if ($compoundWriteInputDecision.hookSpecificOutput.permissionDecision -ne 'deny') {
+        throw 'Weekly restricted mode allowed a compound WriteInput shell command.'
+    }
+
     foreach ($guardedCwd in @($guardChildCwd, $guardOutsideCwd)) {
         $escapedCwdPayload = [ordered]@{
             session_id = $sessionId
@@ -434,7 +463,7 @@ try {
         throw 'Weekly restricted mode rejected the exact completion command.'
     }
     Remove-Item -LiteralPath $weeklyInputPath -Force
-    Add-Check -Name 'hook-weekly-restricted-mode' -Status 'passed' -Detail 'weekly runs stay session-bound across cwd changes, use a fail-closed read-tool allowlist, deny unregistered or multiple TEMP inputs, and accept only the exact completion command'
+    Add-Check -Name 'hook-weekly-restricted-mode' -Status 'passed' -Detail 'weekly runs stay session-bound across cwd changes, use a fail-closed read-tool allowlist, accept only bounded WriteInput chunks, deny unregistered or multiple TEMP inputs, and accept only the exact completion command'
 
     $promptPayload = [ordered]@{
         session_id = $sessionId

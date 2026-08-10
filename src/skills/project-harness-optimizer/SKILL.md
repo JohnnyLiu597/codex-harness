@@ -230,9 +230,10 @@ The weekly script exposes no maintenance, verification-skip, or source-sync
 controls. After the user explicitly approves a bounded proposal, leave the
 weekly workflow and use the normal Runtime Hotfix or Source Release lane with a
 read-only checker and the nearest verification gate. The weekly input must stay
-under the system TEMP directory, match the exact hook-registered path, and be
-deleted on success or validation failure. The restricted hook uses an exact
-read-tool allowlist rather than verb inference. Protected config and auth files
+under the system TEMP directory, be written and registered only through the
+bounded sequential WriteInput state, and be deleted on success or validation
+failure. The restricted hook uses an exact read-tool allowlist and exact
+WriteInput/Complete command shapes rather than verb inference. Protected config and auth files
 are observed only through hashes, and only allowlisted official public citations
 enter durable state.
 

@@ -267,8 +267,10 @@ public static class FakeCodex
 
         if (Test-Path -LiteralPath $childPidPath) { Remove-Item -LiteralPath $childPidPath -Force }
         $timeoutPrompt = Join-Path $promptRoot "timeout.csv"
-        Write-PromptCase -Path $timeoutPrompt -Id "timeout-$($surface.Name)" -Prompt "MODE_TIMEOUT" -Expected "Timeout is classified." -TimeoutSeconds 1
-        $timeout = Invoke-TraceRunner -Surface $surface -PromptFile $timeoutPrompt -RunsRoot $runsRoot -CodexCommand $fakeCodexPath -TimeoutSeconds 1 -NoGrade
+        # Allow cold-start security scanning enough time to launch the synthetic child
+        # while keeping the timeout path bounded and far below the 60-second sleep.
+        Write-PromptCase -Path $timeoutPrompt -Id "timeout-$($surface.Name)" -Prompt "MODE_TIMEOUT" -Expected "Timeout is classified." -TimeoutSeconds 3
+        $timeout = Invoke-TraceRunner -Surface $surface -PromptFile $timeoutPrompt -RunsRoot $runsRoot -CodexCommand $fakeCodexPath -TimeoutSeconds 3 -NoGrade
         Assert-True ($timeout.status -eq "failed" -and $timeout.run_status -eq "failed") "$($surface.Name) timeout did not propagate with NoGrade and AllowFailures"
         $timeoutManifest = Get-Content -LiteralPath $timeout.manifests.result -Raw | ConvertFrom-Json
         $timeoutCase = @($timeoutManifest.results)[0]
